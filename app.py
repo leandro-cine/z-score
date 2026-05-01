@@ -4,7 +4,7 @@ import numpy as np
 import plotly.graph_objects as go
 from scipy.stats import norm
 from datetime import date
-from diretrizes import obter_classificacao, obter_orientacoes, obter_vacinas, obter_esquema_vacinal, obter_marcos
+from diretrizes import obter_classificacao, obter_orientacoes, obter_esquema_vacinal, obter_marcos
 
 # --- CONFIGURAÇÃO DA PÁGINA ---
 st.set_page_config(page_title="Puericultura Digital", layout="wide", initial_sidebar_state="expanded")
