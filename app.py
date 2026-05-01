@@ -81,15 +81,56 @@ with st.sidebar:
     dias = int(dias_restantes % 30.4375)
     idade_meses_float = idade_dias / 30.4375
 
-# CSS Responsivo
-tema_cor = "#0d47a1" if sexo == "Masculino" else "#880e4f"
+# --- CSS RESPONSIVO (LIGHT E DARK MODE) ---
+if sexo == "Masculino":
+    bg_light, bg_dark = "#f0f8ff", "#0a1929"
+    cor_txt_light, cor_txt_dark = "#0d47a1", "#90caf9"
+else:
+    bg_light, bg_dark = "#fff0f5", "#2b111c"
+    cor_txt_light, cor_txt_dark = "#880e4f", "#ff99c2"
+
 st.markdown(f"""
 <style>
-    .stApp {{ background-color: {'#f0f8ff' if sexo == 'Masculino' else '#fff0f5'}; }}
-    .header-bar {{ background-color: {tema_cor}; color: white; padding: 15px; border-radius: 8px 8px 0px 0px; }}
-    .header-title {{ font-size: 20px; font-weight: bold; margin: 0; }}
-    .milestone-card {{ background: white; padding: 15px; border-radius: 8px; border-left: 5px solid {tema_cor}; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }}
-    h1, h2, h3 {{ color: {tema_cor} !important; }}
+    /* MODO CLARO (Padrão) */
+    :root {{
+        --app-bg: {bg_light};
+        --title-color: {cor_txt_light};
+        --card-bg: #ffffff;
+        --card-border: rgba(0,0,0,0.1);
+        --text-base: #333333;
+    }}
+
+    /* MODO ESCURO (Auto-detecta o dispositivo) */
+    @media (prefers-color-scheme: dark) {{
+        :root {{
+            --app-bg: {bg_dark};
+            --title-color: {cor_txt_dark};
+            --card-bg: #1e1e1e;
+            --card-border: rgba(255,255,255,0.1);
+            --text-base: #f0f0f0;
+        }}
+    }}
+
+    .stApp {{ background-color: var(--app-bg); transition: background-color 0.3s ease; }}
+    h1, h2, h3, h4, h5, h6 {{ color: var(--title-color) !important; }}
+    
+    .header-bar {{ 
+        color: white; 
+        padding: 15px; 
+        border-radius: 8px 8px 0px 0px; 
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+    }}
+    .header-title {{ font-size: 20px; font-weight: bold; margin: 0; color: white !important; }}
+    
+    .milestone-card {{ 
+        background: var(--card-bg); 
+        color: var(--text-base);
+        padding: 15px; 
+        border-radius: 8px; 
+        border-left: 5px solid var(--title-color); 
+        margin-bottom: 10px; 
+        box-shadow: 0 2px 4px var(--card-border); 
+    }}
 </style>
 """, unsafe_allow_html=True)
 
@@ -135,31 +176,35 @@ if tabelas_oms:
                 fig = go.Figure()
                 mx = df_curva['Day'] / 30.4375
                 
-                # Áreas coloridas do gráfico
+                # Cores agnósticas (Funcionam no escuro e no claro)
+                cor_linha_extrema = 'gray'
+                
                 if key == "IMC":
-                    fig.add_trace(go.Scatter(x=mx, y=df_curva['SD3neg'], fill=None, line=dict(color='black', width=1, dash='dash'), showlegend=False))
-                    fig.add_trace(go.Scatter(x=mx, y=df_curva['SD2neg'], fill='tonexty', fillcolor='rgba(211,47,47,0.1)', line=dict(color='red', width=1), name='-2Z'))
-                    fig.add_trace(go.Scatter(x=mx, y=df_curva['SD1'], fill='tonexty', fillcolor='rgba(56,142,60,0.1)', line=dict(color='#fbc02d', width=1, dash='dash'), name='+1Z'))
+                    fig.add_trace(go.Scatter(x=mx, y=df_curva['SD3neg'], fill=None, line=dict(color=cor_linha_extrema, width=1, dash='dash'), showlegend=False))
+                    fig.add_trace(go.Scatter(x=mx, y=df_curva['SD2neg'], fill='tonexty', fillcolor='rgba(211,47,47,0.15)', line=dict(color='red', width=1), name='-2Z'))
+                    fig.add_trace(go.Scatter(x=mx, y=df_curva['SD1'], fill='tonexty', fillcolor='rgba(56,142,60,0.15)', line=dict(color='#fbc02d', width=1, dash='dash'), name='+1Z'))
                     fig.add_trace(go.Scatter(x=mx, y=df_curva['SD2'], fill='tonexty', fillcolor='rgba(251,192,45,0.2)', line=dict(color='red', width=1), name='+2Z'))
-                    fig.add_trace(go.Scatter(x=mx, y=df_curva['SD3'], fill='tonexty', fillcolor='rgba(245,124,0,0.1)', line=dict(color='black', width=1, dash='dash'), name='+3Z'))
-                    fig.add_trace(go.Scatter(x=mx, y=df_curva['SD4'], fill='tonexty', fillcolor='rgba(211,47,47,0.1)', line=dict(width=0), showlegend=False))
+                    fig.add_trace(go.Scatter(x=mx, y=df_curva['SD3'], fill='tonexty', fillcolor='rgba(245,124,0,0.15)', line=dict(color=cor_linha_extrema, width=1, dash='dash'), name='+3Z'))
+                    fig.add_trace(go.Scatter(x=mx, y=df_curva['SD4'], fill='tonexty', fillcolor='rgba(211,47,47,0.15)', line=dict(width=0), showlegend=False))
                 else:
-                    fig.add_trace(go.Scatter(x=mx, y=df_curva['SD3neg'], fill=None, line=dict(color='black', width=1, dash='dash'), name='-3Z', showlegend=(key!="PC")))
-                    fig.add_trace(go.Scatter(x=mx, y=df_curva['SD2neg'], fill='tonexty', fillcolor='rgba(211,47,47,0.1)', line=dict(color='red', width=1), name='-2Z'))
-                    fig.add_trace(go.Scatter(x=mx, y=df_curva['SD2'], fill='tonexty', fillcolor='rgba(56,142,60,0.1)', line=dict(color='red', width=1), name='+2Z'))
+                    fig.add_trace(go.Scatter(x=mx, y=df_curva['SD3neg'], fill=None, line=dict(color=cor_linha_extrema, width=1, dash='dash'), name='-3Z', showlegend=(key!="PC")))
+                    fig.add_trace(go.Scatter(x=mx, y=df_curva['SD2neg'], fill='tonexty', fillcolor='rgba(211,47,47,0.15)', line=dict(color='red', width=1), name='-2Z'))
+                    fig.add_trace(go.Scatter(x=mx, y=df_curva['SD2'], fill='tonexty', fillcolor='rgba(56,142,60,0.15)', line=dict(color='red', width=1), name='+2Z'))
                     if key == "PC":
-                        fig.add_trace(go.Scatter(x=mx, y=df_curva['SD3'], fill='tonexty', fillcolor='rgba(211,47,47,0.1)', line=dict(color='black', width=1, dash='dash'), name='+3Z'))
+                        fig.add_trace(go.Scatter(x=mx, y=df_curva['SD3'], fill='tonexty', fillcolor='rgba(211,47,47,0.15)', line=dict(color=cor_linha_extrema, width=1, dash='dash'), name='+3Z'))
                     else:
-                        fig.add_trace(go.Scatter(x=mx, y=df_curva['SD3'], fill='tonexty', fillcolor='rgba(245,124,0,0.1)', line=dict(color='black', width=1, dash='dash'), name='+3Z'))
-                        fig.add_trace(go.Scatter(x=mx, y=df_curva['SD4'], fill='tonexty', fillcolor='rgba(211,47,47,0.1)', line=dict(width=0), showlegend=False))
+                        fig.add_trace(go.Scatter(x=mx, y=df_curva['SD3'], fill='tonexty', fillcolor='rgba(245,124,0,0.15)', line=dict(color=cor_linha_extrema, width=1, dash='dash'), name='+3Z'))
+                        fig.add_trace(go.Scatter(x=mx, y=df_curva['SD4'], fill='tonexty', fillcolor='rgba(211,47,47,0.15)', line=dict(width=0), showlegend=False))
                 
                 fig.add_trace(go.Scatter(x=mx, y=df_curva['SD0'], line=dict(color='green', width=3), name='Mediana'))
-                fig.add_trace(go.Scatter(x=[idade_meses_float], y=[valor], mode='markers', marker=dict(size=14, color='black', symbol='x'), name='Paciente'))
+                
+                # Ponto do paciente otimizado para contraste em ambos os temas
+                fig.add_trace(go.Scatter(x=[idade_meses_float], y=[valor], mode='markers', marker=dict(size=14, color='royalblue', symbol='circle'), name='Paciente'))
 
                 for ano in [12, 24, 36, 48, 60, 72, 84, 96, 108, 120]:
                     if cur_range[0] <= ano <= cur_range[1]:
-                        fig.add_vline(x=ano, line_width=1.5, line_dash="solid", line_color="rgba(0,0,0,0.25)")
-                        fig.add_annotation(x=ano, y=0.01, yref="paper", text=f"{ano//12} ano(s)", showarrow=False, font=dict(size=12, color="black"), yanchor="bottom")
+                        fig.add_vline(x=ano, line_width=1, line_dash="solid", line_color="rgba(128,128,128,0.3)")
+                        fig.add_annotation(x=ano, y=0.01, yref="paper", text=f"{ano//12} ano(s)", showarrow=False, font=dict(size=12, color="gray"), yanchor="bottom")
 
                 if key == "PC": limite_y = [30, 52]
                 elif key == "Peso":
@@ -176,13 +221,16 @@ if tabelas_oms:
                 if valor > limite_y[1]: limite_y[1] = valor + (dtick_y * 1)
                 if valor < limite_y[0]: limite_y[0] = valor - (dtick_y * 1)
 
+                # Layout adaptável sem template='plotly_white'
                 fig.update_layout(
-                    margin=dict(l=40, r=20, t=20, b=40), height=600, template="plotly_white",
-                    xaxis=dict(title="Idade (meses)", range=cur_range, dtick=1, showgrid=True, gridcolor='rgba(0,0,0,0.06)', showline=True, linewidth=1, linecolor='black', mirror=True),
-                    yaxis=dict(title=rotulo_y, range=limite_y, dtick=dtick_y, showgrid=True, gridcolor='rgba(0,0,0,0.06)', showline=True, linewidth=1, linecolor='black', mirror=True),
+                    margin=dict(l=40, r=20, t=20, b=40), height=600,
+                    xaxis=dict(title="Idade (meses)", range=cur_range, dtick=1, showgrid=True, gridcolor='rgba(128,128,128,0.2)', showline=True, linewidth=1, linecolor='gray', mirror=True),
+                    yaxis=dict(title=rotulo_y, range=limite_y, dtick=dtick_y, showgrid=True, gridcolor='rgba(128,128,128,0.2)', showline=True, linewidth=1, linecolor='gray', mirror=True),
                     legend=dict(orientation="h", y=1.02, x=1, xanchor="right")
                 )
-                st.plotly_chart(fig, use_container_width=True)
+                
+                # Deixa o Streamlit gerenciar o tema principal do gráfico
+                st.plotly_chart(fig, use_container_width=True, theme="streamlit")
 
     # === ABA 2: DESENVOLVIMENTO ===
     with tab_desenv:
@@ -208,7 +256,6 @@ if tabelas_oms:
         st.subheader("📅 Calendário Vacinal do PNI")
         vacinas_pni = obter_vacinas(idade_meses_float)
         
-        # Filtra vacinas pendentes e aplicadas
         aplicadas = [v for v in vacinas_pni if v["idade"] <= idade_meses_float]
         pendentes = [v for v in vacinas_pni if v["idade"] > idade_meses_float]
         
@@ -233,7 +280,7 @@ if tabelas_oms:
             st.markdown(f"#### {titulo}")
             st.info(conteudo)
 
-    # === ABA 5: SUPLEMENTAÇÃO (CALCULADORA INTELIGENTE) ===
+    # === ABA 5: SUPLEMENTAÇÃO ===
     with tab_suple:
         st.subheader("💊 Planejamento Profilático (Diretrizes SBP)")
         
@@ -244,7 +291,6 @@ if tabelas_oms:
         st.markdown("---")
         st.markdown("### 🩸 Calculadora de Ferro Profilático")
         
-        # Seleção detalhada dos sais baseada na Tabela de Sais 
         opcoes_sais = {
             "Sulfato Ferroso Gotas (ex: FURP, Lomfer) - 25mg Fe/mL [1 gota = 1mg]": {"mg_gota": 1.0, "marcas": "FURP, Lomfer, Fersil"},
             "Ferripolimaltose Gotas 50mg/mL (ex: Noripurum) [1 gota = 2.5mg]": {"mg_gota": 2.5, "marcas": "Noripurum, Ultrafer"},
@@ -256,26 +302,22 @@ if tabelas_oms:
         escolha_sal = st.selectbox("Selecione a Apresentação e Sal de Ferro:", list(opcoes_sais.keys()))
         dados_sal = opcoes_sais[escolha_sal]
         
-        # Algoritmo de Decisão SBP (Baseado no Peso de Nascimento e Idade) [cite: 89, 90, 87, 88]
         dose_mg_kg = 0
         orientacao_inicio = ""
         
         if prematuro or peso_nasc < 2.5:
             orientacao_inicio = "Início aos 30 dias de vida."
             if idade_meses_float <= 12:
-                # 1º Ano de vida
                 if peso_nasc < 1.0: dose_mg_kg = 4
                 elif peso_nasc <= 1.5: dose_mg_kg = 3
                 else: dose_mg_kg = 2
             else:
-                # 2º Ano de vida
                 dose_mg_kg = 1
         else:
-            # Termo / Peso Adequado
             dose_mg_kg = 1
             if aleitamento_exclusivo:
                 orientacao_inicio = "Início aos 180 dias de vida."
-                if idade_meses_float < 6: dose_mg_kg = 0 # Ainda não tem indicação formal
+                if idade_meses_float < 6: dose_mg_kg = 0
             else:
                 orientacao_inicio = "Início aos 90 dias de vida."
                 if idade_meses_float < 3: dose_mg_kg = 0
@@ -291,6 +333,6 @@ if tabelas_oms:
             - **Posologia Recomendada:** Administrar **{gotas_dia} gotas** ao dia via oral.
             - **Apresentação de Referência:** {dados_sal['marcas']}
             """)
-            st.caption("Nota: As doses devem ser conferidas com o rótulo do fabricante adquirido pelo paciente, pois concentrações e tamanhos de gotas podem variar[cite: 4].")
+            st.caption("Nota: As doses devem ser conferidas com o rótulo do fabricante adquirido pelo paciente, pois concentrações e tamanhos de gotas podem variar.")
         else:
             st.warning(f"**Atenção:** Paciente atual sem indicação de início no momento (Regra: {orientacao_inicio}).")
