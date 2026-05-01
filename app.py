@@ -9,7 +9,7 @@ from diretrizes import obter_classificacao, obter_orientacoes, obter_vacinas, ob
 # --- CONFIGURAÇÃO DA PÁGINA ---
 st.set_page_config(page_title="Puericultura Digital", layout="wide", initial_sidebar_state="expanded")
 
-# --- CARREGAMENTO DOS FICHEIROS (BLINDADO) ---
+# --- CARREGAMENTO DOS FICHEIROS ---
 @st.cache_data
 def carregar_tabelas():
     def carregar_e_limpar(nome_arquivo):
@@ -49,53 +49,60 @@ def carregar_tabelas():
 
 tabelas_oms = carregar_tabelas()
 
-# --- INTERFACE LATERAL (REATIVA) ---
+# --- INTERFACE LATERAL ---
 with st.sidebar:
-    st.header("👶 Dados do Paciente")
+    st.header("👶 Perfil do Paciente")
     sexo = st.selectbox("Sexo", ["Masculino", "Feminino"])
     data_nasc = st.date_input("Nascimento", value=date(2023, 1, 1), format="DD/MM/YYYY")
-    data_aval = st.date_input("Avaliação", value=date.today(), format="DD/MM/YYYY")
+    data_aval = st.date_input("Consulta Atual", value=date.today(), format="DD/MM/YYYY")
     
-    idade_dias = (data_aval - data_nasc).days
-    prematuro = st.checkbox("Pré-termo (< 37 semanas)")
+    idade_dias_cron = (data_aval - data_nasc).days
+    
+    st.markdown("---")
+    st.subheader("Histórico de Nascimento")
+    prematuro = st.checkbox("Bebê Pré-termo (< 37 semanas)")
+    idade_dias = idade_dias_cron
     if prematuro:
-        sem_gest = st.number_input("Semanas de Gestação", 24, 36, 34)
-        idade_dias = max(0, idade_dias - ((40 - sem_gest) * 7))
+        sem_gest = st.number_input("Semanas Gestacionais", 24, 36, 34)
+        idade_dias = max(0, idade_dias_cron - ((40 - sem_gest) * 7))
+        
+    peso_nasc = st.number_input("Peso ao nascer (kg)", 0.5, 6.0, 3.2, step=0.1)
+    aleitamento_exclusivo = st.checkbox("Em Aleitamento Materno Exclusivo (AME)?", value=True)
 
+    st.markdown("---")
+    st.subheader("📏 Medidas Atuais")
+    peso = st.number_input("Peso Atual (kg)", 0.5, 150.0, 10.0, step=0.1)
+    estatura = st.number_input("Estatura Atual (cm)", 30.0, 220.0, 75.0, step=0.5)
+    pc = st.number_input("PC Atual (cm)", 20.0, 80.0, 45.0, step=0.1)
+    
     anos = int(idade_dias // 365.25)
     dias_restantes = idade_dias % 365.25
     meses = int(dias_restantes // 30.4375)
     dias = int(dias_restantes % 30.4375)
     idade_meses_float = idade_dias / 30.4375
-    
-    st.success(f"**Idade exata:**\n\n{anos} ano(s), {meses} mês(es) e {dias} dia(s)")
 
-    st.header("📏 Medidas")
-    peso = st.number_input("Peso (kg)", 0.5, 150.0, 10.0, step=0.1)
-    estatura = st.number_input("Estatura (cm)", 30.0, 220.0, 75.0, step=0.5)
-    pc = st.number_input("PC (cm)", 20.0, 80.0, 45.0, step=0.1)
-
-# Estilos CSS
+# CSS Responsivo
 tema_cor = "#0d47a1" if sexo == "Masculino" else "#880e4f"
 st.markdown(f"""
 <style>
     .stApp {{ background-color: {'#f0f8ff' if sexo == 'Masculino' else '#fff0f5'}; }}
-    .header-bar {{ background-color: {tema_cor}; color: white; padding: 15px; border-radius: 8px 8px 0px 0px; display: flex; flex-direction: column; justify-content: center; }}
+    .header-bar {{ background-color: {tema_cor}; color: white; padding: 15px; border-radius: 8px 8px 0px 0px; }}
     .header-title {{ font-size: 20px; font-weight: bold; margin: 0; }}
+    .milestone-card {{ background: white; padding: 15px; border-radius: 8px; border-left: 5px solid {tema_cor}; margin-bottom: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }}
     h1, h2, h3 {{ color: {tema_cor} !important; }}
 </style>
 """, unsafe_allow_html=True)
 
-st.title("🩺 Prontuário Pediátrico Digital")
+st.title("🩺 Prontuário Pediátrico Interativo")
+st.success(f"**Idade Fisiológica do Paciente:** {anos} ano(s), {meses} mês(es) e {dias} dia(s)")
 
-# Sem botão! O app renderiza as abas automaticamente baseando-se nas entradas
 if tabelas_oms:
     imc = peso / ((estatura/100)**2)
     idade_busca = min(idade_dias, 1856) 
     
     tab_cresc, tab_desenv, tab_vac, tab_orient, tab_suple = st.tabs(["📈 Crescimento", "🧠 Desenvolvimento", "💉 Vacinação", "📝 Orientações", "💊 Suplementação"])
 
-    # --- 1. ABA CRESCIMENTO (GRÁFICOS RESTAURADOS) ---
+    # === ABA 1: CRESCIMENTO ===
     with tab_cresc:
         if idade_meses_float <= 24: faixa_titulo, range_grafico = "0 a 2 anos", [0, 24]
         elif idade_meses_float <= 60: faixa_titulo, range_grafico = "2 a 5 anos", [24, 60]
@@ -128,6 +135,7 @@ if tabelas_oms:
                 fig = go.Figure()
                 mx = df_curva['Day'] / 30.4375
                 
+                # Áreas coloridas do gráfico
                 if key == "IMC":
                     fig.add_trace(go.Scatter(x=mx, y=df_curva['SD3neg'], fill=None, line=dict(color='black', width=1, dash='dash'), showlegend=False))
                     fig.add_trace(go.Scatter(x=mx, y=df_curva['SD2neg'], fill='tonexty', fillcolor='rgba(211,47,47,0.1)', line=dict(color='red', width=1), name='-2Z'))
@@ -176,65 +184,113 @@ if tabelas_oms:
                 )
                 st.plotly_chart(fig, use_container_width=True)
 
-    # --- 2. ABA DESENVOLVIMENTO ---
+    # === ABA 2: DESENVOLVIMENTO ===
     with tab_desenv:
-        st.subheader("Marcos do Desenvolvimento")
-        marcos = obter_marcos(idade_meses_float)
-        col_ant, col_atual = st.columns(2)
-        with col_ant:
-            st.markdown("### ⏪ Marcos Anteriores")
-            for m, lista in marcos.items():
-                if m < idade_meses_float:
-                    for item in lista: st.checkbox(item, value=True, key=f"ant_{item}")
-        with col_atual:
-            st.markdown("### 🎯 Esperados para a fase")
-            for m, lista in marcos.items():
-                if m >= idade_meses_float and m <= idade_meses_float + 6:
-                    for item in lista: st.checkbox(item, value=False, key=f"atu_{item}")
+        faixa_nome, marcos_fase = obter_marcos(idade_meses_float)
+        st.subheader(f"🎯 Marcos Esperados para a Fase Atual ({faixa_nome})")
+        st.markdown("Assinale os marcos que a criança já realiza para monitoramento do neurodesenvolvimento:")
+        
+        cols = st.columns(2)
+        idx = 0
+        for dominio, itens in marcos_fase.items():
+            with cols[idx % 2]:
+                st.markdown(f"""
+                <div class="milestone-card">
+                    <h4 style="margin-top:0;">{dominio}</h4>
+                </div>
+                """, unsafe_allow_html=True)
+                for item in itens:
+                    st.checkbox(item, key=f"marco_{dominio}_{item}")
+            idx += 1
 
-    # --- 3. ABA VACINAÇÃO ---
+    # === ABA 3: VACINAÇÃO ===
     with tab_vac:
-        tomadas, proximas = obter_vacinas(idade_meses_float)
-        c1, c2 = st.columns(2)
-        c1.markdown("### ✅ Vacinas para conferir no cartão")
-        for v in tomadas: c1.write(f"- {', '.join(v) if isinstance(v, list) else v}")
-        c2.markdown("### ⏳ Próximas Vacinas (PNI)")
-        for v in proximas: c2.write(f"- {', '.join(v) if isinstance(v, list) else v}")
+        st.subheader("📅 Calendário Vacinal do PNI")
+        vacinas_pni = obter_vacinas(idade_meses_float)
+        
+        # Filtra vacinas pendentes e aplicadas
+        aplicadas = [v for v in vacinas_pni if v["idade"] <= idade_meses_float]
+        pendentes = [v for v in vacinas_pni if v["idade"] > idade_meses_float]
+        
+        col1, col2 = st.columns(2)
+        with col1:
+            st.success("✅ **Vacinas que a criança já deve ter tomado (Conferir caderneta)**")
+            for grupo in aplicadas:
+                with st.expander(f"Fase: {grupo['intervalo']}"):
+                    for vacina in grupo["vacinas"]:
+                        st.checkbox(vacina, value=True, key=f"vac_{grupo['intervalo']}_{vacina}")
+        with col2:
+            st.warning("⏳ **Próximas Doses / Pendentes**")
+            for grupo in pendentes:
+                st.markdown(f"**{grupo['intervalo']}:** " + ", ".join(grupo["vacinas"]))
 
-    # --- 4. ABA ORIENTAÇÕES ---
+    # === ABA 4: ORIENTAÇÕES ===
     with tab_orient:
-        st.subheader("Orientações de Puericultura para a Faixa Etária")
-        ori = obter_orientacoes(idade_meses_float)
-        for cat, texto in ori.items():
-            with st.expander(f"📍 {cat}"): st.write(texto)
+        st.subheader("📝 Orientações de Puericultura")
+        orientacoes = obter_orientacoes(idade_meses_float)
+        
+        for titulo, conteudo in orientacoes.items():
+            st.markdown(f"#### {titulo}")
+            st.info(conteudo)
 
-    # --- 5. ABA SUPLEMENTAÇÃO ---
+    # === ABA 5: SUPLEMENTAÇÃO (CALCULADORA INTELIGENTE) ===
     with tab_suple:
-        st.subheader("Planejamento de Suplementação (Consensos SBP)")
+        st.subheader("💊 Planejamento Profilático (Diretrizes SBP)")
         
-        st.info("☀️ **Vitamina D:** 400 UI/dia de 1 semana até 12 meses; 600 UI/dia de 12 a 24 meses.")
+        st.markdown("### ☀️ Vitamina D")
+        dose_vitd = "400 UI/dia" if idade_meses_float <= 12 else "600 UI/dia"
+        st.info(f"**Prescrição recomendada:** Administrar **{dose_vitd}** (Início na 1ª semana de vida).")
         
-        st.markdown("### 🩸 Calculadora de Profilaxia de Ferro")
-        tipo_ferro = st.selectbox("Selecione o Sal de Ferro prescrito", ["Sulfato Ferroso (25mg/mL de Fe elementar)", "Ferro Quelato/Polimaltosado (50mg/mL de Fe elementar)"])
+        st.markdown("---")
+        st.markdown("### 🩸 Calculadora de Ferro Profilático")
         
-        if prematuro or peso < 2.5:
-            dose_mg_kg = 2 if peso > 1.5 else 3
+        # Seleção detalhada dos sais baseada na Tabela de Sais 
+        opcoes_sais = {
+            "Sulfato Ferroso Gotas (ex: FURP, Lomfer) - 25mg Fe/mL [1 gota = 1mg]": {"mg_gota": 1.0, "marcas": "FURP, Lomfer, Fersil"},
+            "Ferripolimaltose Gotas 50mg/mL (ex: Noripurum) [1 gota = 2.5mg]": {"mg_gota": 2.5, "marcas": "Noripurum, Ultrafer"},
+            "Ferripolimaltose Gotas 100mg/mL (ex: Dexfer) [1 gota = 5mg]": {"mg_gota": 5.0, "marcas": "Dexfer"},
+            "Ferro Quelato Glicinato Gotas (ex: Neutrofer) [1 gota = 2.5mg]": {"mg_gota": 2.5, "marcas": "Neutrofer"},
+            "Glicinato Férrico Associado (ex: Combiron) [1 gota = 2.5mg]": {"mg_gota": 2.5, "marcas": "Combiron"}
+        }
+        
+        escolha_sal = st.selectbox("Selecione a Apresentação e Sal de Ferro:", list(opcoes_sais.keys()))
+        dados_sal = opcoes_sais[escolha_sal]
+        
+        # Algoritmo de Decisão SBP (Baseado no Peso de Nascimento e Idade) [cite: 89, 90, 87, 88]
+        dose_mg_kg = 0
+        orientacao_inicio = ""
+        
+        if prematuro or peso_nasc < 2.5:
+            orientacao_inicio = "Início aos 30 dias de vida."
+            if idade_meses_float <= 12:
+                # 1º Ano de vida
+                if peso_nasc < 1.0: dose_mg_kg = 4
+                elif peso_nasc <= 1.5: dose_mg_kg = 3
+                else: dose_mg_kg = 2
+            else:
+                # 2º Ano de vida
+                dose_mg_kg = 1
         else:
-            dose_mg_kg = 1 
+            # Termo / Peso Adequado
+            dose_mg_kg = 1
+            if aleitamento_exclusivo:
+                orientacao_inicio = "Início aos 180 dias de vida."
+                if idade_meses_float < 6: dose_mg_kg = 0 # Ainda não tem indicação formal
+            else:
+                orientacao_inicio = "Início aos 90 dias de vida."
+                if idade_meses_float < 3: dose_mg_kg = 0
+        
+        if dose_mg_kg > 0:
+            dose_total_mg = peso * dose_mg_kg
+            gotas_dia = max(1, round(dose_total_mg / dados_sal["mg_gota"]))
             
-        dose_total_mg = peso * dose_mg_kg
-        
-        if "Sulfato" in tipo_ferro:
-            gotas = round(dose_total_mg / 1.25)
-            marcas, conc = "Fer-in-sol, Sulferrol", "1 gota ≈ 1.25mg Fe elementar"
+            st.success(f"""
+            **📄 Sugestão de Receituário:**
+            - **Necessidade (Diretriz SBP):** {dose_mg_kg} mg/kg/dia ({orientacao_inicio})
+            - **Dose Alvo Calculada:** {dose_total_mg:.1f} mg de Ferro Elementar/dia
+            - **Posologia Recomendada:** Administrar **{gotas_dia} gotas** ao dia via oral.
+            - **Apresentação de Referência:** {dados_sal['marcas']}
+            """)
+            st.caption("Nota: As doses devem ser conferidas com o rótulo do fabricante adquirido pelo paciente, pois concentrações e tamanhos de gotas podem variar[cite: 4].")
         else:
-            gotas = round(dose_total_mg / 2.5)
-            marcas, conc = "Neutrofer, Noripurum", "1 gota ≈ 2.5mg Fe elementar"
-
-        st.success(f"""
-        **Prescrição Sugerida baseada no peso ({peso}kg):**
-        - **Dose Alvo (SBP):** {dose_mg_kg} mg/kg/dia
-        - **Necessidade Total:** {dose_total_mg:.1f} mg de Ferro Elementar
-        - **Posologia:** Administrar **{max(1, gotas)} gotas** ao dia.
-        - **Marcas sugeridas:** {marcas}
-        """)
+            st.warning(f"**Atenção:** Paciente atual sem indicação de início no momento (Regra: {orientacao_inicio}).")
