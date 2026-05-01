@@ -95,9 +95,9 @@ with st.sidebar:
     st.success(f"**Idade exata:**\n\n{anos} ano(s), {meses} mês(es) e {dias} dia(s)\n\n*(Total de {idade_dias} dias)*")
 
     st.header("📏 Medidas")
-    peso = st.number_input("Peso (kg)", 0.5, 100.0, 10.0, step=0.1)
-    estatura = st.number_input("Estatura (cm)", 30.0, 200.0, 75.0, step=0.5)
-    pc = st.number_input("PC (cm)", 20.0, 70.0, 45.0, step=0.1)
+    peso = st.number_input("Peso (kg)", 0.5, 150.0, 10.0, step=0.1)
+    estatura = st.number_input("Estatura (cm)", 30.0, 220.0, 75.0, step=0.5)
+    pc = st.number_input("PC (cm)", 20.0, 80.0, 45.0, step=0.1)
 
 # Estilo Dinâmico (Azul/Rosa) e Responsividade
 tema_cor = "#0d47a1" if sexo == "Masculino" else "#880e4f"
@@ -128,10 +128,10 @@ st.markdown(f"""
 # --- CÁLCULOS E ABAS ---
 if st.sidebar.button("📊 Gerar Gráficos", use_container_width=True):
     imc = peso / ((estatura/100)**2)
-    idade_busca = min(idade_dias, 1856) # Limite para as tabelas atuais de 5 anos (mudar para 3652 se incluir as de 10 anos)
-    
-    # Determinação Dinâmica do Intervalo e Títulos do Gráfico (0-2, 2-5, 5-10)
+    idade_busca = min(idade_dias, 1856) # Limite para as tabelas atuais de 5 anos
     idade_meses_float = idade_dias / 30.4375
+    
+    # Determinação Dinâmica do Intervalo X (0-2, 2-5, 5-10)
     if idade_meses_float <= 24:
         faixa_titulo = "0 a 2 anos"
         range_grafico = [0, 24]
@@ -170,7 +170,7 @@ if st.sidebar.button("📊 Gerar Gráficos", use_container_width=True):
             fig = go.Figure()
             mx = df_curva['Day'] / 30.4375
             
-            # Desenha as áreas de forma similar ao MS
+            # Desenho das Áreas (idêntico ao Ministério da Saúde)
             if key == "IMC":
                 fig.add_trace(go.Scatter(x=mx, y=df_curva['SD3neg'], fill=None, line=dict(color='black', width=1, dash='dash'), showlegend=False))
                 fig.add_trace(go.Scatter(x=mx, y=df_curva['SD2neg'], fill='tonexty', fillcolor='rgba(211,47,47,0.1)', line=dict(color='red', width=1), name='-2Z'))
@@ -182,7 +182,6 @@ if st.sidebar.button("📊 Gerar Gráficos", use_container_width=True):
                 fig.add_trace(go.Scatter(x=mx, y=df_curva['SD3neg'], fill=None, line=dict(color='black', width=1, dash='dash'), name='-3Z', showlegend=(key!="PC")))
                 fig.add_trace(go.Scatter(x=mx, y=df_curva['SD2neg'], fill='tonexty', fillcolor='rgba(211,47,47,0.1)', line=dict(color='red', width=1), name='-2Z'))
                 fig.add_trace(go.Scatter(x=mx, y=df_curva['SD2'], fill='tonexty', fillcolor='rgba(56,142,60,0.1)', line=dict(color='red', width=1), name='+2Z'))
-                
                 if key == "PC":
                     fig.add_trace(go.Scatter(x=mx, y=df_curva['SD3'], fill='tonexty', fillcolor='rgba(211,47,47,0.1)', line=dict(color='black', width=1, dash='dash'), name='+3Z'))
                 else:
@@ -191,21 +190,51 @@ if st.sidebar.button("📊 Gerar Gráficos", use_container_width=True):
             
             fig.add_trace(go.Scatter(x=mx, y=df_curva['SD0'], line=dict(color='green', width=3), name='Mediana'))
             
+            # Ponto do Paciente
             paciente_x = idade_dias / 30.4375
             fig.add_trace(go.Scatter(x=[paciente_x], y=[valor], mode='markers', marker=dict(size=14, color='black', symbol='x'), name='Paciente'))
 
-            # Linhas de anos baseadas no range visível
+            # Linhas verticais dos Anos
             for ano in [12, 24, 36, 48, 60, 72, 84, 96, 108, 120]:
                 if current_range[0] <= ano <= current_range[1]:
                     fig.add_vline(x=ano, line_width=1.5, line_dash="solid", line_color="rgba(0,0,0,0.25)")
                     fig.add_annotation(x=ano, y=0.01, yref="paper", text=f"{ano//12} ano(s)", showarrow=False, font=dict(size=12, color="black"), yanchor="bottom")
 
+            # --- DEFINIÇÃO DOS LIMITES Y (IGUAL AOS GRÁFICOS DO MINISTÉRIO DA SAÚDE) ---
+            if key == "PC":
+                limite_y = [30, 52]
+            elif key == "Peso":
+                if idade_meses_float <= 24: limite_y = [2, 18]
+                elif idade_meses_float <= 60: limite_y = [10, 30]
+                else: limite_y = [15, 55]
+            elif key == "Estatura":
+                if idade_meses_float <= 24: limite_y = [45, 95]
+                elif idade_meses_float <= 60: limite_y = [80, 120]
+                else: limite_y = [95, 185]
+            elif key == "IMC":
+                if idade_meses_float <= 60: limite_y = [10, 22]
+                else: limite_y = [12, 30]
+
+            # Segurança: Se a criança tiver um valor MUITO alto/baixo que passa do papel do Ministério da Saúde, a gente alarga a margem um pouco só para não cortar o X.
+            if valor > limite_y[1]: limite_y[1] = valor + (dtick_y * 1)
+            if valor < limite_y[0]: limite_y[0] = valor - (dtick_y * 1)
+
+            # --- CONFIGURAÇÃO DA MOLDURA E EIXOS ---
             fig.update_layout(
                 margin=dict(l=40, r=20, t=20, b=40),
                 height=600,
                 template="plotly_white",
-                xaxis=dict(title="Idade (meses)", range=current_range, dtick=1, showgrid=True, gridcolor='rgba(0,0,0,0.06)', tick0=current_range[0]),
-                yaxis=dict(title=rotulo_y, dtick=dtick_y, showgrid=True, gridcolor='rgba(0,0,0,0.06)'),
+                # O comando mirror=True e showline=True cria a caixa/retângulo exterior em volta do gráfico
+                xaxis=dict(
+                    title="Idade (meses)", range=current_range, dtick=1, showgrid=True, 
+                    gridcolor='rgba(0,0,0,0.06)', tick0=current_range[0],
+                    showline=True, linewidth=1, linecolor='black', mirror=True
+                ),
+                yaxis=dict(
+                    title=rotulo_y, range=limite_y, dtick=dtick_y, showgrid=True, 
+                    gridcolor='rgba(0,0,0,0.06)',
+                    showline=True, linewidth=1, linecolor='black', mirror=True
+                ),
                 legend=dict(orientation="h", y=1.02, x=1, xanchor="right")
             )
             st.plotly_chart(fig, use_container_width=True)
