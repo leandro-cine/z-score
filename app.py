@@ -91,41 +91,40 @@ else:
 
 st.markdown(f"""
 <style>
+:root {{
+    --app-bg: {bg_light};
+    --title-color: {cor_txt_light};
+    --card-bg: #ffffff;
+    --border-color: rgba(0,0,0,0.1);
+    --text-color: #333333;
+}}
+@media (prefers-color-scheme: dark) {{
     :root {{
-        --app-bg: {bg_light};
-        --title-color: {cor_txt_light};
-        --card-bg: #ffffff;
-        --border-color: rgba(0,0,0,0.1);
-        --text-color: #333333;
+        --app-bg: {bg_dark};
+        --title-color: {cor_txt_dark};
+        --card-bg: #1e1e1e;
+        --border-color: rgba(255,255,255,0.2);
+        --text-color: #f0f0f0;
     }}
-    @media (prefers-color-scheme: dark) {{
-        :root {{
-            --app-bg: {bg_dark};
-            --title-color: {cor_txt_dark};
-            --card-bg: #1e1e1e;
-            --border-color: rgba(255,255,255,0.2);
-            --text-color: #f0f0f0;
-        }}
-    }}
-    .stApp {{ background-color: var(--app-bg); transition: background-color 0.3s ease; }}
-    h1, h2, h3, h4, h5, h6 {{ color: var(--title-color) !important; }}
-    
-    /* Tabela Estilo Caderneta MS */
-    .tabela-vacinacao {{
-        width: 100%; border-collapse: collapse; margin-top: 10px;
-        color: var(--text-color); font-size: 15px;
-        background-color: var(--card-bg);
-        border: 2px solid var(--title-color);
-    }}
-    .tabela-vacinacao th {{
-        background-color: var(--title-color); color: white; padding: 12px; text-align: left;
-    }}
-    .tabela-vacinacao td {{
-        padding: 10px; border: 1px solid var(--border-color); vertical-align: middle;
-    }}
-    .tabela-vacinacao tr:nth-child(even) {{
-        background-color: rgba(128,128,128,0.05);
-    }}
+}}
+.stApp {{ background-color: var(--app-bg); transition: background-color 0.3s ease; }}
+h1, h2, h3, h4, h5, h6 {{ color: var(--title-color) !important; }}
+
+.tabela-vacinacao {{
+    width: 100%; border-collapse: collapse; margin-top: 10px;
+    color: var(--text-color); font-size: 15px;
+    background-color: var(--card-bg);
+    border: 2px solid var(--title-color);
+}}
+.tabela-vacinacao th {{
+    background-color: var(--title-color); color: white; padding: 12px; text-align: left;
+}}
+.tabela-vacinacao td {{
+    padding: 10px; border: 1px solid var(--border-color); vertical-align: middle;
+}}
+.tabela-vacinacao tr:nth-child(even) {{
+    background-color: rgba(128,128,128,0.05);
+}}
 </style>
 """, unsafe_allow_html=True)
 
@@ -138,7 +137,7 @@ if tabelas_oms:
     
     tab_cresc, tab_desenv, tab_vac, tab_orient, tab_suple = st.tabs(["📈 Crescimento", "🧠 Desenvolvimento", "💉 Vacinação", "📝 Orientações", "💊 Suplementação"])
 
-    # === ABA 1: CRESCIMENTO (COM CARDS HTML EXATOS) ===
+    # === ABA 1: CRESCIMENTO ===
     with tab_cresc:
         if idade_meses_float <= 24: faixa_titulo, range_grafico = "0 a 2 anos", [0, 24]
         elif idade_meses_float <= 60: faixa_titulo, range_grafico = "2 a 5 anos", [24, 60]
@@ -160,15 +159,9 @@ if tabelas_oms:
                 
                 classif, criterio, cor_alerta = obter_classificacao(z, key)
                 
-                # O Card HTML Rico Restaurado
-                st.markdown(f"""
-                <div style='padding:15px; border-radius:8px; background-color:{cor_alerta}; color:white; font-size:16px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);'>
-                    <h3 style='color:white !important; margin-top:0;'>{titulo_ms} ({faixa_etaria})</h3>
-                    <strong>Escore-Z: {z:.2f} | Percentil: P{norm.cdf(z)*100:.0f}</strong><hr style="margin: 8px 0; border-color: rgba(255,255,255,0.3);">
-                    <strong>Classificação Oficial:</strong> {classif}<br>
-                    <strong>Critério Aplicado:</strong> <i>{criterio}</i>
-                </div>
-                """, unsafe_allow_html=True)
+                # HTML sem recuos (evita o erro do bloco de código)
+                card_html = f"<div style='padding:15px; border-radius:8px; background-color:{cor_alerta}; color:white; font-size:16px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);'><h3 style='color:white !important; margin-top:0;'>{titulo_ms} ({faixa_etaria})</h3><strong>Escore-Z: {z:.2f} | Percentil: P{norm.cdf(z)*100:.0f}</strong><hr style='margin: 8px 0; border-color: rgba(255,255,255,0.3);'><strong>Classificação Oficial:</strong> {classif}<br><strong>Critério Aplicado:</strong> <i>{criterio}</i></div>"
+                st.markdown(card_html, unsafe_allow_html=True)
                 
                 fig = go.Figure()
                 mx = df_curva['Day'] / 30.4375
@@ -194,7 +187,6 @@ if tabelas_oms:
                 fig.add_trace(go.Scatter(x=mx, y=df_curva['SD0'], line=dict(color='green', width=3), name='Mediana'))
                 fig.add_trace(go.Scatter(x=[idade_meses_float], y=[valor], mode='markers', marker=dict(size=14, color='royalblue', symbol='circle'), name='Paciente'))
 
-                # Linhas Verticais Fortes de Anos Restauradas
                 for ano in [12, 24, 36, 48, 60, 72, 84, 96, 108, 120]:
                     if cur_range[0] <= ano <= cur_range[1]:
                         fig.add_vline(x=ano, line_width=2, line_dash="dot", line_color="rgba(150,150,150,0.8)")
@@ -215,7 +207,6 @@ if tabelas_oms:
                 if valor > limite_y[1]: limite_y[1] = valor + (dtick_y * 1)
                 if valor < limite_y[0]: limite_y[0] = valor - (dtick_y * 1)
 
-                # Grade Mensal Nítida
                 fig.update_layout(
                     margin=dict(l=40, r=20, t=20, b=40), height=600,
                     xaxis=dict(title="Idade (meses)", range=cur_range, dtick=1, showgrid=True, gridcolor='rgba(128,128,128,0.4)', showline=True, linewidth=1, linecolor='gray', mirror=True),
@@ -225,70 +216,52 @@ if tabelas_oms:
                 
                 st.plotly_chart(fig, use_container_width=True, theme="streamlit")
 
-    # === ABA 2: DESENVOLVIMENTO (INTUITIVA) ===
+    # === ABA 2: DESENVOLVIMENTO ===
     with tab_desenv:
         faixa_nome, marcos_gerais = obter_marcos(idade_meses_float)
         st.subheader(f"🧠 Vigilância do Desenvolvimento")
         
         col1, col2 = st.columns(2)
         
-        # Coluna 1: Marcos da Fase Atual
         with col1:
             st.markdown(f"### 🎯 Fase Atual ({faixa_nome})")
             st.info("A criança deve realizar a maioria destes marcos nesta consulta:")
             for marco in marcos_gerais[faixa_nome]:
                 st.checkbox(f"**{marco}**", key=f"atual_{marco}")
                 
-        # Coluna 2: Revisão de Marcos Anteriores
         with col2:
             st.markdown("### ⏪ Fases Anteriores (Revisão)")
             st.warning("A criança já deve ter atingido estes marcos. Marque para confirmar:")
             for faixa, lista_marcos in marcos_gerais.items():
                 if faixa != faixa_nome:
-                    # Lógica para só mostrar o que veio ANTES da fase atual
                     if list(marcos_gerais.keys()).index(faixa) < list(marcos_gerais.keys()).index(faixa_nome):
                         with st.expander(f"Marcos de {faixa}", expanded=False):
                             for marco in lista_marcos:
                                 st.checkbox(marco, value=True, key=f"ant_{faixa}_{marco}")
 
-    # === ABA 3: VACINAÇÃO (MODELO CADERNETA) ===
+    # === ABA 3: VACINAÇÃO (SEM RECUOS PARA NÃO QUEBRAR O HTML) ===
     with tab_vac:
         st.subheader("📅 Calendário Nacional de Vacinação da Criança (PNI)")
         st.markdown("Acompanhamento das vacinas de acordo com o modelo impresso da Caderneta de Saúde:")
         
         esquema = obter_esquema_vacinal()
         
-        html_tabela = f"""
-        <table class="tabela-vacinacao">
-            <thead>
-                <tr>
-                    <th style="width: 20%;">Idade Recomendada</th>
-                    <th style="width: 40%;">Vacina</th>
-                    <th style="width: 20%;">Dose</th>
-                    <th style="width: 20%; text-align: center;">Status (Na Caderneta)</th>
-                </tr>
-            </thead>
-            <tbody>
-        """
+        html_tabela = "<table class='tabela-vacinacao'><thead><tr>"
+        html_tabela += "<th style='width: 20%;'>Idade Recomendada</th><th style='width: 40%;'>Vacina</th>"
+        html_tabela += "<th style='width: 20%;'>Dose</th><th style='width: 20%; text-align: center;'>Status</th>"
+        html_tabela += "</tr></thead><tbody>"
+        
         for fase in esquema:
             for i, (vac, dose) in enumerate(fase["vacinas"]):
-                # O Rowspan agrupa a Idade Recomendada, igual ao Ministério da Saúde
                 linha_idade = f"<td rowspan='{len(fase['vacinas'])}'><b>{fase['idade']}</b></td>" if i == 0 else ""
                 
-                # Lógica visual de status (Atrasada / No prazo / Futura)
                 if fase["meses_limite"] <= idade_meses_float:
                     icone_status = "<span style='color:green;'>✅ Aplicada / Pendente</span>"
                 else:
                     icone_status = "<span style='color:gray;'>⏳ Futura</span>"
                     
-                html_tabela += f"""
-                <tr>
-                    {linha_idade}
-                    <td>{vac}</td>
-                    <td>{dose}</td>
-                    <td style="text-align: center;">{icone_status}</td>
-                </tr>
-                """
+                html_tabela += f"<tr>{linha_idade}<td>{vac}</td><td>{dose}</td><td style='text-align: center;'>{icone_status}</td></tr>"
+                
         html_tabela += "</tbody></table>"
         
         st.markdown(html_tabela, unsafe_allow_html=True)
