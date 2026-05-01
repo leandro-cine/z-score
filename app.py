@@ -6,24 +6,29 @@ import os
 from scipy.stats import norm
 from datetime import date
 
-# --- CONFIGURAÇÃO DA PÁGINA ---
-st.set_page_config(page_title="Dashboard Pediátrico - OMS", layout="wide")
-st.title("📊 Avaliação de Crescimento Infantil")
-
 # --- CARREGAMENTO DOS DADOS REAIS ---
 @st.cache_data
 def carregar_tabelas():
-    # Criamos uma função super robusta para ler e limpar cada arquivo
     def carregar_e_limpar(nome_arquivo):
-        # sep=None e engine='python' forçam o Pandas a descobrir sozinho se é ',' ou ';'
+        # Descobre o delimitador automaticamente
         df = pd.read_csv(nome_arquivo, engine='python', sep=None, encoding='utf-8-sig')
         
-        # Limpa espaços em branco perdidos nos nomes das colunas
+        # Limpa os nomes das colunas
         df.columns = df.columns.str.strip()
         
-        # A MÁGICA: Pega a 1ª coluna (seja lá como o Excel a chamou) e a renomeia para 'Day'
+        # Força a primeira coluna a se chamar 'Day'
         nome_primeira_coluna = df.columns[0]
         df.rename(columns={nome_primeira_coluna: 'Day'}, inplace=True)
+        
+        # --- A NOVA MÁGICA: Tratamento de Decimais (Brasil vs Internacional) ---
+        for coluna in df.columns:
+            # Se a coluna foi lida como texto (object) por causa da vírgula
+            if df[coluna].dtype == 'object':
+                df[coluna] = df[coluna].str.replace(',', '.') # Troca vírgula por ponto
+            
+            # Força a coluna a virar número matemático
+            df[coluna] = pd.to_numeric(df[coluna], errors='coerce')
+        # -----------------------------------------------------------------------
         
         return df
 
