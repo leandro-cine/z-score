@@ -13,36 +13,33 @@ st.title("📊 Avaliação de Crescimento Infantil")
 # --- CARREGAMENTO DOS DADOS REAIS ---
 @st.cache_data
 def carregar_tabelas():
-    # Função auxiliar para limpar os cabeçalhos dos CSVs
-    def limpar_df(df):
-        # Remove caracteres invisíveis (como o \ufeff do Excel) e espaços
-        df.columns = df.columns.str.strip().str.replace('\ufeff', '')
-        # Se o arquivo usar 'Age' (como nas tabelas antigas), converte para 'Day'
-        if 'Age' in df.columns:
-            df.rename(columns={'Age': 'Day'}, inplace=True)
-        return df
-
     try:
+        # O encoding='utf-8-sig' remove automaticamente os caracteres invisíveis do Excel (\ufeff)
         tabelas = {
             "Masculino": {
-                "Peso": limpar_df(pd.read_csv("WFA_boys_z_exp.csv")),
-                "Estatura": limpar_df(pd.read_csv("LFA_boys_z_exp.csv")),
-                "IMC": limpar_df(pd.read_csv("BFA_boys_z_exp.csv")),
-                "PC": limpar_df(pd.read_csv("HCFA_boys_z_exp.csv"))
+                "Peso": pd.read_csv("WFA_boys_z_exp.csv", encoding='utf-8-sig'),
+                "Estatura": pd.read_csv("LFA_boys_z_exp.csv", encoding='utf-8-sig'),
+                "IMC": pd.read_csv("BFA_boys_z_exp.csv", encoding='utf-8-sig'),
+                "PC": pd.read_csv("HCFA_boys_z_exp.csv", encoding='utf-8-sig')
             },
             "Feminino": {
-                "Peso": limpar_df(pd.read_csv("WFA_girls_z_exp.csv")),
-                "Estatura": limpar_df(pd.read_csv("LFA_girls_z_exp.csv")),
-                "IMC": limpar_df(pd.read_csv("BFA_girls_z_exp.csv")),
-                "PC": limpar_df(pd.read_csv("HCFA_girls_z_exp.csv"))
+                "Peso": pd.read_csv("WFA_girls_z_exp.csv", encoding='utf-8-sig'),
+                "Estatura": pd.read_csv("LFA_girls_z_exp.csv", encoding='utf-8-sig'),
+                "IMC": pd.read_csv("BFA_girls_z_exp.csv", encoding='utf-8-sig'),
+                "PC": pd.read_csv("HCFA_girls_z_exp.csv", encoding='utf-8-sig')
             }
         }
+        
+        # Prevenção: Se algum ficheiro usar 'Age' em vez de 'Day', o código corrige automaticamente
+        for sexo in tabelas:
+            for parametro in tabelas[sexo]:
+                if 'Age' in tabelas[sexo][parametro].columns:
+                    tabelas[sexo][parametro].rename(columns={'Age': 'Day'}, inplace=True)
+                    
         return tabelas
-    except FileNotFoundError as e:
-        st.error(f"⚠️ Erro ao carregar ficheiros. Verifique se os 8 CSVs estão no GitHub. Erro: {e}")
+    except Exception as e:
+        st.error(f"⚠️ Erro ao carregar os ficheiros: {e}")
         return None
-
-tabelas_oms = carregar_tabelas()
         
 tabelas_oms = carregar_tabelas()
 
