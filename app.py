@@ -1,83 +1,359 @@
-def obter_classificacao(z, parametro):
-    if parametro == "PC":
-        if z > 2: return "PC acima do esperado para a idade", "> +2 escores z", "#f57c00"
-        elif z >= -2: return "PC adequado para idade", "≤ +2 e ≥ -2 escores z", "#388e3c"
-        else: return "PC abaixo do esperado para idade", "< -2 escores z", "#d32f2f"
-    elif parametro == "Peso":
-        if z > 2: return "Peso elevado para idade", "> escore-z +2", "#f57c00"
-        elif z >= -2: return "Peso adequado para idade", "≥ escore-z -2 e ≤ +2", "#388e3c"
-        elif z >= -3: return "Baixo peso para idade", "≥ escore-z -3 e < -2", "#f57c00"
-        else: return "Muito baixo peso para a idade", "< escore-z -3", "#d32f2f"
-    elif parametro == "Estatura":
-        if z >= -2: return "Estatura adequada para idade", "≥ escore-z -2", "#388e3c"
-        elif z >= -3: return "Baixa estatura para idade", "≥ escore-z -3 e < -2", "#f57c00"
-        else: return "Muito baixa estatura para idade", "< escore-z -3", "#d32f2f"
-    elif parametro == "IMC":
-        if z > 3: return "Obesidade", "> escore-z +3", "#d32f2f"
-        elif z > 2: return "Sobrepeso", "> +2 e ≤ +3", "#f57c00"
-        elif z > 1: return "Risco de sobrepeso", "> +1 e ≤ +2", "#fbc02d"
-        elif z >= -2: return "Eutrofia", "≥ -2 e ≤ +1", "#388e3c"
-        elif z >= -3: return "Magreza", "≥ -3 e < -2", "#f57c00"
-        else: return "Magreza acentuada", "< escore-z -3", "#d32f2f"
+import streamlit as st
+import pandas as pd
+import numpy as np
+import plotly.graph_objects as go
+from scipy.stats import norm
+from datetime import date
+from diretrizes import obter_classificacao, obter_orientacoes, obter_vacinas, obter_esquema_vacinal, obter_marcos
 
-def obter_orientacoes(meses):
-    if meses < 6:
-        return {
-            "Alimentação": "Aleitamento materno exclusivo sob livre demanda. Sem chás, água ou sucos.",
-            "Sono": "Sono seguro: decúbito dorsal, berço firme e vazio. Média de 14 a 17h diárias.",
-            "Higiene": "Banho morno diário. Limpeza do coto umbilical com álcool 70%.",
-            "Segurança": "Transporte em 'bebê conforto' voltado para trás. Prevenção de quedas.",
-            "Telas": "Zero exposição a telas. Estimular contato visual e conversas."
-        }
-    elif meses < 12:
-        return {
-            "Alimentação": "Introdução alimentar aos 6 meses. Manter leite materno. Sem sal e açúcar.",
-            "Sono": "Rotina do sono. Média de 12 a 15h diárias, com 2 cochilos.",
-            "Higiene": "Início da escovação com flúor (>1000ppm) desde o primeiro dente.",
-            "Segurança": "Proteger tomadas, quinas e escadas. Cuidado com objetos pequenos.",
-            "Telas": "Zero exposição a telas."
-        }
-    else:
-        return {
-            "Alimentação": "Alimentação da família. Estimular autonomia. Evitar ultraprocessados.",
-            "Sono": "11 a 14h por dia. Transição para 1 cochilo diurno.",
-            "Higiene": "Higiene oral supervisionada. Iniciar sinais para desfralde.",
-            "Segurança": "Trancar medicamentos e produtos de limpeza. Cuidado com afogamentos.",
-            "Telas": "Evitar. Se houver, máximo 1h/dia com supervisão."
-        }
+# --- CONFIGURAÇÃO DA PÁGINA ---
+st.set_page_config(page_title="Puericultura Digital", layout="wide", initial_sidebar_state="expanded")
 
-def obter_esquema_vacinal():
-    return [
-        {"idade": "Ao nascer", "vacinas": [("BCG", "Dose única"), ("Hepatite B", "Dose ao nascer")], "meses_limite": 0},
-        {"idade": "2 meses", "vacinas": [("Penta", "1ª dose"), ("VIP", "1ª dose"), ("Pneumocócica 10V", "1ª dose"), ("Rotavírus", "1ª dose")], "meses_limite": 2},
-        {"idade": "3 meses", "vacinas": [("Meningocócica C", "1ª dose")], "meses_limite": 3},
-        {"idade": "4 meses", "vacinas": [("Penta", "2ª dose"), ("VIP", "2ª dose"), ("Pneumocócica 10V", "2ª dose"), ("Rotavírus", "2ª dose")], "meses_limite": 4},
-        {"idade": "5 meses", "vacinas": [("Meningocócica C", "2ª dose")], "meses_limite": 5},
-        {"idade": "6 meses", "vacinas": [("Penta", "3ª dose"), ("VIP", "3ª dose"), ("Covid-19", "1ª dose"), ("Influenza", "Dose anual")], "meses_limite": 6},
-        {"idade": "7 meses", "vacinas": [("Covid-19", "2ª dose")], "meses_limite": 7},
-        {"idade": "9 meses", "vacinas": [("Febre Amarela", "Dose inicial"), ("Covid-19", "3ª dose")], "meses_limite": 9},
-        {"idade": "12 meses", "vacinas": [("Tríplice Viral", "1ª dose"), ("Pneumocócica 10V", "Reforço"), ("Meningocócica C", "Reforço")], "meses_limite": 12},
-        {"idade": "15 meses", "vacinas": [("DTP", "1º Reforço"), ("VOP", "1º Reforço"), ("Hepatite A", "Dose única"), ("Tetraviral", "Dose única")], "meses_limite": 15},
-        {"idade": "4 anos", "vacinas": [("DTP", "2º Reforço"), ("VOP", "2º Reforço"), ("Varicela", "Dose única"), ("Febre Amarela", "Reforço")], "meses_limite": 48}
-    ]
+# --- CARREGAMENTO DOS FICHEIROS ---
+@st.cache_data
+def carregar_tabelas():
+    def carregar_e_limpar(nome_arquivo):
+        try:
+            df = pd.read_csv(nome_arquivo, sep=',', decimal='.', encoding='utf-8-sig')
+            if len(df.columns) < 5: raise ValueError
+        except:
+            df = pd.read_csv(nome_arquivo, sep=';', decimal=',', encoding='utf-8-sig')
+        
+        df.columns = df.columns.str.strip().str.replace('\ufeff', '')
+        df.rename(columns={df.columns[0]: 'Day'}, inplace=True)
+        df = df.apply(pd.to_numeric, errors='coerce').dropna(subset=['Day'])
+        df['Day'] = df['Day'].astype(int)
+        
+        if 'SD4' not in df.columns: df['SD4'] = df['SD3'] + (df['SD3'] - df['SD2'])
+        if 'SD4neg' not in df.columns: df['SD4neg'] = df['SD3neg'] - (df['SD2neg'] - df['SD3neg'])
+        return df
 
-def obter_marcos(meses):
-    marcos_gerais = {
-        "0 a 2 meses": ["Acalma-se quando atendida", "Sorriso social", "Olha para o rosto", "Faz sons além de chorar", "Sustenta a cabeça", "Move braços e pernas de forma simétrica"],
-        "2 a 4 meses": ["Sorri sozinha para chamar atenção", "Dá risadas ao interagir", "Faz sons como 'oooo'", "Leva as mãos à boca", "Rola de lado", "Mantém a cabeça firme"],
-        "4 a 6 meses": ["Reconhece pessoas conhecidas", "Gosta de se olhar no espelho", "Balbucia", "Passa objetos de uma mão para outra", "Senta com apoio", "Eleva o tronco apoiado nas mãos"],
-        "6 a 9 meses": ["Estranha desconhecidos", "Brinca de 'esconde-achou'", "Entende o 'não'", "Faz 'mamama' e 'bababa'", "Senta sem apoio", "Engatinha ou se arrasta"],
-        "9 a 12 meses": ["Bate palmas", "Acena 'tchau'", "Fala 'mama' ou 'dada' com sentido", "Pinça lateral e completa", "Anda com apoio", "Dá os primeiros passos soltos"],
-        "12 a 18 meses": ["Brinca de 'faz de conta' simples", "Mostra afeto", "Fala palavras soltas além de mama/dada", "Empilha blocos", "Rabisca espontaneamente", "Anda sem apoio"],
-        "18 a 24 meses": ["Percebe se os outros estão tristes", "Junta duas palavras (ex: 'quer água')", "Aponta para partes do corpo", "Corre", "Chuta bola", "Sobe em móveis sem ajuda"]
-    }
+    try:
+        return {
+            "Masculino": {
+                "Peso": carregar_e_limpar("WFA_boys_z_exp.csv"),
+                "Estatura": carregar_e_limpar("LFA_boys_z_exp.csv"),
+                "IMC": carregar_e_limpar("BFA_boys_z_exp.csv"),
+                "PC": carregar_e_limpar("HCFA_boys_z_exp.csv")
+            },
+            "Feminino": {
+                "Peso": carregar_e_limpar("WFA_girls_z_exp.csv"),
+                "Estatura": carregar_e_limpar("LFA_girls_z_exp.csv"),
+                "IMC": carregar_e_limpar("BFA_girls_z_exp.csv"),
+                "PC": carregar_e_limpar("HCFA_girls_z_exp.csv")
+            }
+        }
+    except Exception as e:
+        st.error(f"⚠️ Erro ao carregar as tabelas: {e}")
+        return None
+
+tabelas_oms = carregar_tabelas()
+
+# --- INTERFACE LATERAL ---
+with st.sidebar:
+    st.header("👶 Perfil do Paciente")
+    sexo = st.selectbox("Sexo", ["Masculino", "Feminino"])
+    data_nasc = st.date_input("Nascimento", value=date(2023, 1, 1), format="DD/MM/YYYY")
+    data_aval = st.date_input("Consulta Atual", value=date.today(), format="DD/MM/YYYY")
     
-    if meses <= 2: chave = "0 a 2 meses"
-    elif meses <= 4: chave = "2 a 4 meses"
-    elif meses <= 6: chave = "4 a 6 meses"
-    elif meses <= 9: chave = "6 a 9 meses"
-    elif meses <= 12: chave = "9 a 12 meses"
-    elif meses <= 18: chave = "12 a 18 meses"
-    else: chave = "18 a 24 meses"
+    idade_dias_cron = (data_aval - data_nasc).days
     
-    return chave, marcos_gerais
+    st.markdown("---")
+    st.subheader("Histórico de Nascimento")
+    prematuro = st.checkbox("Bebê Pré-termo (< 37 semanas)")
+    idade_dias = idade_dias_cron
+    if prematuro:
+        sem_gest = st.number_input("Semanas Gestacionais", 24, 36, 34)
+        idade_dias = max(0, idade_dias_cron - ((40 - sem_gest) * 7))
+        
+    peso_nasc = st.number_input("Peso ao nascer (kg)", 0.5, 6.0, 3.2, step=0.1)
+    aleitamento_exclusivo = st.checkbox("Em Aleitamento Materno Exclusivo (AME)?", value=True)
+
+    st.markdown("---")
+    st.subheader("📏 Medidas Atuais")
+    peso = st.number_input("Peso Atual (kg)", 0.5, 150.0, 10.0, step=0.1)
+    estatura = st.number_input("Estatura Atual (cm)", 30.0, 220.0, 75.0, step=0.5)
+    pc = st.number_input("PC Atual (cm)", 20.0, 80.0, 45.0, step=0.1)
+    
+    anos = int(idade_dias // 365.25)
+    dias_restantes = idade_dias % 365.25
+    meses = int(dias_restantes // 30.4375)
+    dias = int(dias_restantes % 30.4375)
+    idade_meses_float = idade_dias / 30.4375
+
+# --- CSS RESPONSIVO (LIGHT/DARK) ---
+if sexo == "Masculino":
+    bg_light, bg_dark = "#f0f8ff", "#0a1929"
+    cor_txt_light, cor_txt_dark = "#0d47a1", "#90caf9"
+else:
+    bg_light, bg_dark = "#fff0f5", "#2b111c"
+    cor_txt_light, cor_txt_dark = "#880e4f", "#ff99c2"
+
+st.markdown(f"""
+<style>
+    :root {{
+        --app-bg: {bg_light};
+        --title-color: {cor_txt_light};
+        --card-bg: #ffffff;
+        --border-color: rgba(0,0,0,0.1);
+        --text-color: #333333;
+    }}
+    @media (prefers-color-scheme: dark) {{
+        :root {{
+            --app-bg: {bg_dark};
+            --title-color: {cor_txt_dark};
+            --card-bg: #1e1e1e;
+            --border-color: rgba(255,255,255,0.2);
+            --text-color: #f0f0f0;
+        }}
+    }}
+    .stApp {{ background-color: var(--app-bg); transition: background-color 0.3s ease; }}
+    h1, h2, h3, h4, h5, h6 {{ color: var(--title-color) !important; }}
+    
+    /* Tabela Estilo Caderneta MS */
+    .tabela-vacinacao {{
+        width: 100%; border-collapse: collapse; margin-top: 10px;
+        color: var(--text-color); font-size: 15px;
+        background-color: var(--card-bg);
+        border: 2px solid var(--title-color);
+    }}
+    .tabela-vacinacao th {{
+        background-color: var(--title-color); color: white; padding: 12px; text-align: left;
+    }}
+    .tabela-vacinacao td {{
+        padding: 10px; border: 1px solid var(--border-color); vertical-align: middle;
+    }}
+    .tabela-vacinacao tr:nth-child(even) {{
+        background-color: rgba(128,128,128,0.05);
+    }}
+</style>
+""", unsafe_allow_html=True)
+
+st.title("🩺 Prontuário Pediátrico Interativo")
+st.success(f"**Idade Fisiológica do Paciente:** {anos} ano(s), {meses} mês(es) e {dias} dia(s)")
+
+if tabelas_oms:
+    imc = peso / ((estatura/100)**2)
+    idade_busca = min(idade_dias, 1856) 
+    
+    tab_cresc, tab_desenv, tab_vac, tab_orient, tab_suple = st.tabs(["📈 Crescimento", "🧠 Desenvolvimento", "💉 Vacinação", "📝 Orientações", "💊 Suplementação"])
+
+    # === ABA 1: CRESCIMENTO (COM CARDS HTML EXATOS) ===
+    with tab_cresc:
+        if idade_meses_float <= 24: faixa_titulo, range_grafico = "0 a 2 anos", [0, 24]
+        elif idade_meses_float <= 60: faixa_titulo, range_grafico = "2 a 5 anos", [24, 60]
+        else: faixa_titulo, range_grafico = "5 a 10 anos", [60, 120]
+            
+        sub_tabs = st.tabs(["⚖️ Peso", "📏 Estatura", "🧮 IMC", "🧠 PC"])
+        config_graficos = [
+            ("Peso", "Peso para idade", "Peso (kg)", peso, 1.0, faixa_titulo, range_grafico),
+            ("Estatura", "Estatura para idade", "Estatura (cm)", estatura, 5.0, faixa_titulo, range_grafico),
+            ("IMC", "IMC para idade", "IMC (kg/m²)", imc, 1.0, faixa_titulo, range_grafico),
+            ("PC", "PC para idade", "PC (cm)", pc, 1.0, "0 a 2 anos", [0, 24] if idade_meses_float <= 24 else range_grafico)
+        ]
+
+        for stab, (key, titulo_ms, rotulo_y, valor, dtick_y, faixa_etaria, cur_range) in zip(sub_tabs, config_graficos):
+            with stab:
+                df_curva = tabelas_oms[sexo][key]
+                linha = df_curva[df_curva['Day'] == idade_busca].iloc[0]
+                z = (((valor / linha['M'])**linha['L'])-1)/(linha['L']*linha['S']) if linha['L'] != 0 else np.log(valor/linha['M'])/linha['S']
+                
+                classif, criterio, cor_alerta = obter_classificacao(z, key)
+                
+                # O Card HTML Rico Restaurado
+                st.markdown(f"""
+                <div style='padding:15px; border-radius:8px; background-color:{cor_alerta}; color:white; font-size:16px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);'>
+                    <h3 style='color:white !important; margin-top:0;'>{titulo_ms} ({faixa_etaria})</h3>
+                    <strong>Escore-Z: {z:.2f} | Percentil: P{norm.cdf(z)*100:.0f}</strong><hr style="margin: 8px 0; border-color: rgba(255,255,255,0.3);">
+                    <strong>Classificação Oficial:</strong> {classif}<br>
+                    <strong>Critério Aplicado:</strong> <i>{criterio}</i>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                fig = go.Figure()
+                mx = df_curva['Day'] / 30.4375
+                cor_linha_extrema = 'gray'
+                
+                if key == "IMC":
+                    fig.add_trace(go.Scatter(x=mx, y=df_curva['SD3neg'], fill=None, line=dict(color=cor_linha_extrema, width=1, dash='dash'), showlegend=False))
+                    fig.add_trace(go.Scatter(x=mx, y=df_curva['SD2neg'], fill='tonexty', fillcolor='rgba(211,47,47,0.15)', line=dict(color='red', width=1), name='-2Z'))
+                    fig.add_trace(go.Scatter(x=mx, y=df_curva['SD1'], fill='tonexty', fillcolor='rgba(56,142,60,0.15)', line=dict(color='#fbc02d', width=1, dash='dash'), name='+1Z'))
+                    fig.add_trace(go.Scatter(x=mx, y=df_curva['SD2'], fill='tonexty', fillcolor='rgba(251,192,45,0.2)', line=dict(color='red', width=1), name='+2Z'))
+                    fig.add_trace(go.Scatter(x=mx, y=df_curva['SD3'], fill='tonexty', fillcolor='rgba(245,124,0,0.15)', line=dict(color=cor_linha_extrema, width=1, dash='dash'), name='+3Z'))
+                    fig.add_trace(go.Scatter(x=mx, y=df_curva['SD4'], fill='tonexty', fillcolor='rgba(211,47,47,0.15)', line=dict(width=0), showlegend=False))
+                else:
+                    fig.add_trace(go.Scatter(x=mx, y=df_curva['SD3neg'], fill=None, line=dict(color=cor_linha_extrema, width=1, dash='dash'), name='-3Z', showlegend=(key!="PC")))
+                    fig.add_trace(go.Scatter(x=mx, y=df_curva['SD2neg'], fill='tonexty', fillcolor='rgba(211,47,47,0.15)', line=dict(color='red', width=1), name='-2Z'))
+                    fig.add_trace(go.Scatter(x=mx, y=df_curva['SD2'], fill='tonexty', fillcolor='rgba(56,142,60,0.15)', line=dict(color='red', width=1), name='+2Z'))
+                    if key == "PC":
+                        fig.add_trace(go.Scatter(x=mx, y=df_curva['SD3'], fill='tonexty', fillcolor='rgba(211,47,47,0.15)', line=dict(color=cor_linha_extrema, width=1, dash='dash'), name='+3Z'))
+                    else:
+                        fig.add_trace(go.Scatter(x=mx, y=df_curva['SD3'], fill='tonexty', fillcolor='rgba(245,124,0,0.15)', line=dict(color=cor_linha_extrema, width=1, dash='dash'), name='+3Z'))
+                        fig.add_trace(go.Scatter(x=mx, y=df_curva['SD4'], fill='tonexty', fillcolor='rgba(211,47,47,0.15)', line=dict(width=0), showlegend=False))
+                
+                fig.add_trace(go.Scatter(x=mx, y=df_curva['SD0'], line=dict(color='green', width=3), name='Mediana'))
+                fig.add_trace(go.Scatter(x=[idade_meses_float], y=[valor], mode='markers', marker=dict(size=14, color='royalblue', symbol='circle'), name='Paciente'))
+
+                # Linhas Verticais Fortes de Anos Restauradas
+                for ano in [12, 24, 36, 48, 60, 72, 84, 96, 108, 120]:
+                    if cur_range[0] <= ano <= cur_range[1]:
+                        fig.add_vline(x=ano, line_width=2, line_dash="dot", line_color="rgba(150,150,150,0.8)")
+                        fig.add_annotation(x=ano, y=0.01, yref="paper", text=f"<b>{ano//12} ano(s)</b>", showarrow=False, font=dict(size=14, color="gray"), yanchor="bottom")
+
+                if key == "PC": limite_y = [30, 52]
+                elif key == "Peso":
+                    if idade_meses_float <= 24: limite_y = [2, 18]
+                    elif idade_meses_float <= 60: limite_y = [10, 30]
+                    else: limite_y = [15, 55]
+                elif key == "Estatura":
+                    if idade_meses_float <= 24: limite_y = [45, 95]
+                    elif idade_meses_float <= 60: limite_y = [80, 120]
+                    else: limite_y = [95, 185]
+                elif key == "IMC":
+                    limite_y = [10, 22] if idade_meses_float <= 60 else [12, 30]
+
+                if valor > limite_y[1]: limite_y[1] = valor + (dtick_y * 1)
+                if valor < limite_y[0]: limite_y[0] = valor - (dtick_y * 1)
+
+                # Grade Mensal Nítida
+                fig.update_layout(
+                    margin=dict(l=40, r=20, t=20, b=40), height=600,
+                    xaxis=dict(title="Idade (meses)", range=cur_range, dtick=1, showgrid=True, gridcolor='rgba(128,128,128,0.4)', showline=True, linewidth=1, linecolor='gray', mirror=True),
+                    yaxis=dict(title=rotulo_y, range=limite_y, dtick=dtick_y, showgrid=True, gridcolor='rgba(128,128,128,0.4)', showline=True, linewidth=1, linecolor='gray', mirror=True),
+                    legend=dict(orientation="h", y=1.02, x=1, xanchor="right")
+                )
+                
+                st.plotly_chart(fig, use_container_width=True, theme="streamlit")
+
+    # === ABA 2: DESENVOLVIMENTO (INTUITIVA) ===
+    with tab_desenv:
+        faixa_nome, marcos_gerais = obter_marcos(idade_meses_float)
+        st.subheader(f"🧠 Vigilância do Desenvolvimento")
+        
+        col1, col2 = st.columns(2)
+        
+        # Coluna 1: Marcos da Fase Atual
+        with col1:
+            st.markdown(f"### 🎯 Fase Atual ({faixa_nome})")
+            st.info("A criança deve realizar a maioria destes marcos nesta consulta:")
+            for marco in marcos_gerais[faixa_nome]:
+                st.checkbox(f"**{marco}**", key=f"atual_{marco}")
+                
+        # Coluna 2: Revisão de Marcos Anteriores
+        with col2:
+            st.markdown("### ⏪ Fases Anteriores (Revisão)")
+            st.warning("A criança já deve ter atingido estes marcos. Marque para confirmar:")
+            for faixa, lista_marcos in marcos_gerais.items():
+                if faixa != faixa_nome:
+                    # Lógica para só mostrar o que veio ANTES da fase atual
+                    if list(marcos_gerais.keys()).index(faixa) < list(marcos_gerais.keys()).index(faixa_nome):
+                        with st.expander(f"Marcos de {faixa}", expanded=False):
+                            for marco in lista_marcos:
+                                st.checkbox(marco, value=True, key=f"ant_{faixa}_{marco}")
+
+    # === ABA 3: VACINAÇÃO (MODELO CADERNETA) ===
+    with tab_vac:
+        st.subheader("📅 Calendário Nacional de Vacinação da Criança (PNI)")
+        st.markdown("Acompanhamento das vacinas de acordo com o modelo impresso da Caderneta de Saúde:")
+        
+        esquema = obter_esquema_vacinal()
+        
+        html_tabela = f"""
+        <table class="tabela-vacinacao">
+            <thead>
+                <tr>
+                    <th style="width: 20%;">Idade Recomendada</th>
+                    <th style="width: 40%;">Vacina</th>
+                    <th style="width: 20%;">Dose</th>
+                    <th style="width: 20%; text-align: center;">Status (Na Caderneta)</th>
+                </tr>
+            </thead>
+            <tbody>
+        """
+        for fase in esquema:
+            for i, (vac, dose) in enumerate(fase["vacinas"]):
+                # O Rowspan agrupa a Idade Recomendada, igual ao Ministério da Saúde
+                linha_idade = f"<td rowspan='{len(fase['vacinas'])}'><b>{fase['idade']}</b></td>" if i == 0 else ""
+                
+                # Lógica visual de status (Atrasada / No prazo / Futura)
+                if fase["meses_limite"] <= idade_meses_float:
+                    icone_status = "<span style='color:green;'>✅ Aplicada / Pendente</span>"
+                else:
+                    icone_status = "<span style='color:gray;'>⏳ Futura</span>"
+                    
+                html_tabela += f"""
+                <tr>
+                    {linha_idade}
+                    <td>{vac}</td>
+                    <td>{dose}</td>
+                    <td style="text-align: center;">{icone_status}</td>
+                </tr>
+                """
+        html_tabela += "</tbody></table>"
+        
+        st.markdown(html_tabela, unsafe_allow_html=True)
+
+    # === ABA 4: ORIENTAÇÕES ===
+    with tab_orient:
+        st.subheader("📝 Orientações de Puericultura")
+        orientacoes = obter_orientacoes(idade_meses_float)
+        
+        for titulo, conteudo in orientacoes.items():
+            st.markdown(f"#### {titulo}")
+            st.info(conteudo)
+
+    # === ABA 5: SUPLEMENTAÇÃO ===
+    with tab_suple:
+        st.subheader("💊 Planejamento Profilático (Diretrizes SBP)")
+        
+        st.markdown("### ☀️ Vitamina D")
+        dose_vitd = "400 UI/dia" if idade_meses_float <= 12 else "600 UI/dia"
+        st.info(f"**Prescrição recomendada:** Administrar **{dose_vitd}** (Início na 1ª semana de vida).")
+        
+        st.markdown("---")
+        st.markdown("### 🩸 Calculadora de Ferro Profilático")
+        
+        opcoes_sais = {
+            "Sulfato Ferroso Gotas (ex: FURP, Lomfer) - 25mg Fe/mL [1 gota = 1mg]": {"mg_gota": 1.0, "marcas": "FURP, Lomfer, Fersil"},
+            "Ferripolimaltose Gotas 50mg/mL (ex: Noripurum) [1 gota = 2.5mg]": {"mg_gota": 2.5, "marcas": "Noripurum, Ultrafer"},
+            "Ferripolimaltose Gotas 100mg/mL (ex: Dexfer) [1 gota = 5mg]": {"mg_gota": 5.0, "marcas": "Dexfer"},
+            "Ferro Quelato Glicinato Gotas (ex: Neutrofer) [1 gota = 2.5mg]": {"mg_gota": 2.5, "marcas": "Neutrofer"},
+            "Glicinato Férrico Associado (ex: Combiron) [1 gota = 2.5mg]": {"mg_gota": 2.5, "marcas": "Combiron"}
+        }
+        
+        escolha_sal = st.selectbox("Selecione a Apresentação e Sal de Ferro:", list(opcoes_sais.keys()))
+        dados_sal = opcoes_sais[escolha_sal]
+        
+        dose_mg_kg = 0
+        orientacao_inicio = ""
+        
+        if prematuro or peso_nasc < 2.5:
+            orientacao_inicio = "Início aos 30 dias de vida."
+            if idade_meses_float <= 12:
+                if peso_nasc < 1.0: dose_mg_kg = 4
+                elif peso_nasc <= 1.5: dose_mg_kg = 3
+                else: dose_mg_kg = 2
+            else:
+                dose_mg_kg = 1
+        else:
+            dose_mg_kg = 1
+            if aleitamento_exclusivo:
+                orientacao_inicio = "Início aos 180 dias de vida."
+                if idade_meses_float < 6: dose_mg_kg = 0
+            else:
+                orientacao_inicio = "Início aos 90 dias de vida."
+                if idade_meses_float < 3: dose_mg_kg = 0
+        
+        if dose_mg_kg > 0:
+            dose_total_mg = peso * dose_mg_kg
+            gotas_dia = max(1, round(dose_total_mg / dados_sal["mg_gota"]))
+            
+            st.success(f"""
+            **📄 Sugestão de Receituário:**
+            - **Necessidade (Diretriz SBP):** {dose_mg_kg} mg/kg/dia ({orientacao_inicio})
+            - **Dose Alvo Calculada:** {dose_total_mg:.1f} mg de Ferro Elementar/dia
+            - **Posologia Recomendada:** Administrar **{gotas_dia} gotas** ao dia via oral.
+            - **Apresentação de Referência:** {dados_sal['marcas']}
+            """)
+        else:
+            st.warning(f"**Atenção:** Paciente atual sem indicação de início no momento (Regra: {orientacao_inicio}).")
