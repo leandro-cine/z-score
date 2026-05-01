@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
+import os
 from scipy.stats import norm
 from datetime import date
 
@@ -12,26 +13,29 @@ st.title("📊 Avaliação de Crescimento Infantil")
 # --- CARREGAMENTO DOS DADOS REAIS ---
 @st.cache_data
 def carregar_tabelas():
+    # Descobre a pasta exata onde o app.py está salvo
+    pasta_atual = os.path.dirname(os.path.abspath(__file__))
+    
     try:
         tabelas = {
             "Masculino": {
-                "Peso": pd.read_csv("WFA_boys_z_exp.csv"),
-                "Estatura": pd.read_csv("LFA_boys_z_exp.csv"),
-                "IMC": pd.read_csv("BFA_boys_z_exp.csv"),
-                "PC": pd.read_csv("HCFA_boys_z_exp.csv")
+                "Peso": pd.read_csv(os.path.join(pasta_atual, "WFA_boys_z_exp.csv")),
+                "Estatura": pd.read_csv(os.path.join(pasta_atual, "LFA_boys_z_exp.csv")),
+                "IMC": pd.read_csv(os.path.join(pasta_atual, "BFA_boys_z_exp.csv")),
+                "PC": pd.read_csv(os.path.join(pasta_atual, "HCFA_boys_z_exp.csv"))
             },
             "Feminino": {
-                "Peso": pd.read_csv("WFA_girls_z_exp.csv"),
-                "Estatura": pd.read_csv("LFA_girls_z_exp.csv"),
-                "IMC": pd.read_csv("BFA_girls_z_exp.csv"),
-                "PC": pd.read_csv("HCFA_girls_z_exp.csv")
+                "Peso": pd.read_csv(os.path.join(pasta_atual, "WFA_girls_z_exp.csv")),
+                "Estatura": pd.read_csv(os.path.join(pasta_atual, "LFA_girls_z_exp.csv")),
+                "IMC": pd.read_csv(os.path.join(pasta_atual, "BFA_girls_z_exp.csv")),
+                "PC": pd.read_csv(os.path.join(pasta_atual, "HCFA_girls_z_exp.csv"))
             }
         }
         return tabelas
     except FileNotFoundError as e:
-        st.error(f"⚠️ Erro ao carregar ficheiros. Verifique se os 8 CSVs estão na mesma pasta. Erro: {e}")
+        st.error(f"⚠️ Erro: Não foi possível encontrar os arquivos na pasta {pasta_atual}. Detalhe: {e}")
         return None
-
+        
 tabelas_oms = carregar_tabelas()
 
 # --- FUNÇÕES MATEMÁTICAS E CLÍNICAS ---
