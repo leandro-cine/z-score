@@ -5,7 +5,7 @@ import plotly.graph_objects as go
 from scipy.stats import norm
 from datetime import date
 
-# --- CONFIGURAÇÃO DA PÁGINA (WIDE E RESPONSIVA) ---
+# --- CONFIGURAÇÃO DA PÁGINA ---
 st.set_page_config(page_title="Dashboard Pediátrico", layout="wide", initial_sidebar_state="expanded")
 
 # --- CARREGAMENTO DOS FICHEIROS (BLINDADO) ---
@@ -29,7 +29,6 @@ def carregar_tabelas():
         return df
 
     try:
-        # Nota: Certifique-se de que os nomes dos ficheiros no GitHub correspondem a estes:
         tabelas = {
             "Masculino": {
                 "Peso": carregar_e_limpar("WFA_boys_z_exp.csv"),
@@ -63,9 +62,9 @@ def obter_classificacao(z, parametro):
         elif z >= -3: return "Baixo peso para idade", "≥ escore-z -3 e < -2", "#f57c00"
         else: return "Muito baixo peso para a idade", "< escore-z -3", "#d32f2f"
     elif parametro == "Estatura":
-        if z >= -2: return "Estatura adequada para idade", "≥ escore-z -2", "#388e3c"
-        elif z >= -3: return "Baixa estatura para idade", "≥ escore-z -3 e < -2", "#f57c00"
-        else: return "Muito baixa estatura para idade", "< escore-z -3", "#d32f2f"
+        if z >= -2: return "Comprimento/Estatura adequada para idade", "≥ escore-z -2", "#388e3c"
+        elif z >= -3: return "Baixo(a) comprimento/estatura", "≥ escore-z -3 e < -2", "#f57c00"
+        else: return "Muito baixo(a) comprimento/estatura", "< escore-z -3", "#d32f2f"
     elif parametro == "IMC":
         if z > 3: return "Obesidade", "> escore-z +3", "#d32f2f"
         elif z > 2: return "Sobrepeso", "> +2 e ≤ +3", "#f57c00"
@@ -74,7 +73,7 @@ def obter_classificacao(z, parametro):
         elif z >= -3: return "Magreza", "≥ -3 e < -2", "#f57c00"
         else: return "Magreza acentuada", "< escore-z -3", "#d32f2f"
 
-# --- INTERFACE E CSS RESPONSIVO ---
+# --- INTERFACE LATERAL ---
 with st.sidebar:
     st.header("👶 Dados do Paciente")
     sexo = st.selectbox("Sexo", ["Masculino", "Feminino"])
@@ -86,6 +85,14 @@ with st.sidebar:
     if prematuro:
         sem_gest = st.number_input("Semanas de Gestação", 24, 36, 34)
         idade_dias = max(0, idade_dias - ((40 - sem_gest) * 7))
+
+    # Cálculo da Idade em Anos, Meses e Dias
+    anos = int(idade_dias // 365.25)
+    dias_restantes = idade_dias % 365.25
+    meses = int(dias_restantes // 30.4375)
+    dias = int(dias_restantes % 30.4375)
+    
+    st.success(f"**Idade exata:**\n\n{anos} ano(s), {meses} mês(es) e {dias} dia(s)\n\n*(Total de {idade_dias} dias)*")
 
     st.header("📏 Medidas")
     peso = st.number_input("Peso (kg)", 0.5, 100.0, 10.0, step=0.1)
@@ -111,7 +118,6 @@ st.markdown(f"""
     }}
     .header-title {{ font-size: 20px; font-weight: bold; margin: 0; }}
     .header-info {{ font-size: 14px; opacity: 0.9; }}
-    .main-container {{ max-width: 1200px; margin: auto; }}
     @media (max-width: 600px) {{
         .header-title {{ font-size: 16px; }}
         .stPlotlyChart {{ height: 500px !important; }}
@@ -122,18 +128,30 @@ st.markdown(f"""
 # --- CÁLCULOS E ABAS ---
 if st.sidebar.button("📊 Gerar Gráficos", use_container_width=True):
     imc = peso / ((estatura/100)**2)
-    idade_busca = min(idade_dias, 1856)
+    idade_busca = min(idade_dias, 1856) # Limite para as tabelas atuais de 5 anos (mudar para 3652 se incluir as de 10 anos)
     
+    # Determinação Dinâmica do Intervalo e Títulos do Gráfico (0-2, 2-5, 5-10)
+    idade_meses_float = idade_dias / 30.4375
+    if idade_meses_float <= 24:
+        faixa_titulo = "0 a 2 anos"
+        range_grafico = [0, 24]
+    elif idade_meses_float <= 60:
+        faixa_titulo = "2 a 5 anos"
+        range_grafico = [24, 60]
+    else:
+        faixa_titulo = "5 a 10 anos"
+        range_grafico = [60, 120]
+        
     tabs = st.tabs(["⚖️ Peso", "📏 Estatura", "🧮 IMC", "🧠 PC"])
     
     config_graficos = [
-        ("Peso", "Peso para idade", "Peso (kg)", peso, 1.0, "0 a 5 anos"),
-        ("Estatura", "Estatura para idade", "Estatura (cm)", estatura, 5.0, "0 a 5 anos"),
-        ("IMC", "IMC para idade", "IMC (kg/m²)", imc, 1.0, "0 a 5 anos"),
-        ("PC", "PC para idade", "PC (cm)", pc, 1.0, "0 a 2 anos")
+        ("Peso", "Peso para idade", "Peso (kg)", peso, 1.0, faixa_titulo, range_grafico),
+        ("Estatura", "Estatura para idade", "Estatura/Comp. (cm)", estatura, 5.0, faixa_titulo, range_grafico),
+        ("IMC", "IMC para idade", "IMC (kg/m²)", imc, 1.0, faixa_titulo, range_grafico),
+        ("PC", "Perímetro Cefálico para idade", "PC (cm)", pc, 1.0, "0 a 2 anos", [0, 24] if idade_meses_float <= 24 else range_grafico)
     ]
 
-    for tab, (key, titulo_ms, rotulo_y, valor, dtick_y, faixa_etaria) in zip(tabs, config_graficos):
+    for tab, (key, titulo_ms, rotulo_y, valor, dtick_y, faixa_etaria, current_range) in zip(tabs, config_graficos):
         with tab:
             df_curva = tabelas_oms[sexo][key]
             linha = df_curva[df_curva['Day'] == idade_busca].iloc[0]
@@ -141,7 +159,6 @@ if st.sidebar.button("📊 Gerar Gráficos", use_container_width=True):
             
             classif, criterio, cor_alerta = obter_classificacao(z, key)
             
-            # Cabeçalho Retangular Superior (Estilo Ministério da Saúde)
             st.markdown(f"""
             <div class="header-bar">
                 <div class="header-title">{titulo_ms} {faixa_etaria}</div>
@@ -150,34 +167,45 @@ if st.sidebar.button("📊 Gerar Gráficos", use_container_width=True):
             </div>
             """, unsafe_allow_html=True)
             
-            # Gráfico com Plotly
             fig = go.Figure()
             mx = df_curva['Day'] / 30.4375
             
-            # Áreas Sombreadas
-            fig.add_trace(go.Scatter(x=mx, y=df_curva['SD3neg'], fill=None, line_color='black', line_dash='dash', name='-3Z', showlegend=False))
-            fig.add_trace(go.Scatter(x=mx, y=df_curva['SD2neg'], fill='tonexty', fillcolor='rgba(211,47,47,0.1)', line_color='red', name='-2Z'))
-            fig.add_trace(go.Scatter(x=mx, y=df_curva['SD2'], fill='tonexty', fillcolor='rgba(56,142,60,0.1)', line_color='red', name='+2Z'))
-            fig.add_trace(go.Scatter(x=mx, y=df_curva['SD3'], fill='tonexty', fillcolor='rgba(245,124,0,0.1)', line_color='black', line_dash='dash', name='+3Z'))
+            # Desenha as áreas de forma similar ao MS
+            if key == "IMC":
+                fig.add_trace(go.Scatter(x=mx, y=df_curva['SD3neg'], fill=None, line=dict(color='black', width=1, dash='dash'), showlegend=False))
+                fig.add_trace(go.Scatter(x=mx, y=df_curva['SD2neg'], fill='tonexty', fillcolor='rgba(211,47,47,0.1)', line=dict(color='red', width=1), name='-2Z'))
+                fig.add_trace(go.Scatter(x=mx, y=df_curva['SD1'], fill='tonexty', fillcolor='rgba(56,142,60,0.1)', line=dict(color='#fbc02d', width=1, dash='dash'), name='+1Z'))
+                fig.add_trace(go.Scatter(x=mx, y=df_curva['SD2'], fill='tonexty', fillcolor='rgba(251,192,45,0.2)', line=dict(color='red', width=1), name='+2Z'))
+                fig.add_trace(go.Scatter(x=mx, y=df_curva['SD3'], fill='tonexty', fillcolor='rgba(245,124,0,0.1)', line=dict(color='black', width=1, dash='dash'), name='+3Z'))
+                fig.add_trace(go.Scatter(x=mx, y=df_curva['SD4'], fill='tonexty', fillcolor='rgba(211,47,47,0.1)', line=dict(width=0), showlegend=False))
+            else:
+                fig.add_trace(go.Scatter(x=mx, y=df_curva['SD3neg'], fill=None, line=dict(color='black', width=1, dash='dash'), name='-3Z', showlegend=(key!="PC")))
+                fig.add_trace(go.Scatter(x=mx, y=df_curva['SD2neg'], fill='tonexty', fillcolor='rgba(211,47,47,0.1)', line=dict(color='red', width=1), name='-2Z'))
+                fig.add_trace(go.Scatter(x=mx, y=df_curva['SD2'], fill='tonexty', fillcolor='rgba(56,142,60,0.1)', line=dict(color='red', width=1), name='+2Z'))
+                
+                if key == "PC":
+                    fig.add_trace(go.Scatter(x=mx, y=df_curva['SD3'], fill='tonexty', fillcolor='rgba(211,47,47,0.1)', line=dict(color='black', width=1, dash='dash'), name='+3Z'))
+                else:
+                    fig.add_trace(go.Scatter(x=mx, y=df_curva['SD3'], fill='tonexty', fillcolor='rgba(245,124,0,0.1)', line=dict(color='black', width=1, dash='dash'), name='+3Z'))
+                    fig.add_trace(go.Scatter(x=mx, y=df_curva['SD4'], fill='tonexty', fillcolor='rgba(211,47,47,0.1)', line=dict(width=0), showlegend=False))
+            
             fig.add_trace(go.Scatter(x=mx, y=df_curva['SD0'], line=dict(color='green', width=3), name='Mediana'))
             
-            # Ponto do Paciente
             paciente_x = idade_dias / 30.4375
             fig.add_trace(go.Scatter(x=[paciente_x], y=[valor], mode='markers', marker=dict(size=14, color='black', symbol='x'), name='Paciente'))
 
-            # Zoom e Anos
-            range_x = [0, 24] if key == "PC" else [0, 60]
-            for ano in [12, 24, 36, 48, 60]:
-                if range_x[0] <= ano <= range_x[1]:
-                    fig.add_vline(x=ano, line_width=1, line_dash="solid", line_color="rgba(0,0,0,0.3)")
-                    fig.add_annotation(x=ano, y=0.02, yref="paper", text=f"{ano//12} ano(s)", showarrow=False, font=dict(size=12, color="black"))
+            # Linhas de anos baseadas no range visível
+            for ano in [12, 24, 36, 48, 60, 72, 84, 96, 108, 120]:
+                if current_range[0] <= ano <= current_range[1]:
+                    fig.add_vline(x=ano, line_width=1.5, line_dash="solid", line_color="rgba(0,0,0,0.25)")
+                    fig.add_annotation(x=ano, y=0.01, yref="paper", text=f"{ano//12} ano(s)", showarrow=False, font=dict(size=12, color="black"), yanchor="bottom")
 
             fig.update_layout(
                 margin=dict(l=40, r=20, t=20, b=40),
                 height=600,
                 template="plotly_white",
-                xaxis=dict(title="Idade (meses)", range=range_x, dtick=1, showgrid=True, gridcolor='rgba(0,0,0,0.05)'),
-                yaxis=dict(title=rotulo_y, dtick=dtick_y, showgrid=True, gridcolor='rgba(0,0,0,0.05)'),
+                xaxis=dict(title="Idade (meses)", range=current_range, dtick=1, showgrid=True, gridcolor='rgba(0,0,0,0.06)', tick0=current_range[0]),
+                yaxis=dict(title=rotulo_y, dtick=dtick_y, showgrid=True, gridcolor='rgba(0,0,0,0.06)'),
                 legend=dict(orientation="h", y=1.02, x=1, xanchor="right")
             )
             st.plotly_chart(fig, use_container_width=True)
