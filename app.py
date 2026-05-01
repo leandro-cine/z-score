@@ -10,25 +10,27 @@ from datetime import date
 @st.cache_data
 def carregar_tabelas():
     def carregar_e_limpar(nome_arquivo):
-        # Descobre o delimitador automaticamente
-        df = pd.read_csv(nome_arquivo, engine='python', sep=None, encoding='utf-8-sig')
+        # 1. Tenta abrir no padrão Internacional da OMS (separador = vírgula, decimal = ponto)
+        try:
+            df = pd.read_csv(nome_arquivo, sep=',', decimal='.', encoding='utf-8-sig')
+            if len(df.columns) < 5: # Se leu tudo como 1 coluna só, força erro para ir pro plano B
+                raise ValueError
+        except:
+            # 2. Se falhar, tenta o padrão Brasil/Excel (separador = ponto e vírgula, decimal = vírgula)
+            df = pd.read_csv(nome_arquivo, sep=';', decimal=',', encoding='utf-8-sig')
         
-        # Limpa os nomes das colunas
+        # Limpa os cabeçalhos para evitar espaços invisíveis
         df.columns = df.columns.str.strip()
+        df.rename(columns={df.columns[0]: 'Day'}, inplace=True)
         
-        # Força a primeira coluna a se chamar 'Day'
-        nome_primeira_coluna = df.columns[0]
-        df.rename(columns={nome_primeira_coluna: 'Day'}, inplace=True)
+        # Converte TUDO para número matemático de forma limpa (qualquer texto vira NaN)
+        df = df.apply(pd.to_numeric, errors='coerce')
         
-        # --- A NOVA MÁGICA: Tratamento de Decimais (Brasil vs Internacional) ---
-        for coluna in df.columns:
-            # Se a coluna foi lida como texto (object) por causa da vírgula
-            if df[coluna].dtype == 'object':
-                df[coluna] = df[coluna].str.replace(',', '.') # Troca vírgula por ponto
-            
-            # Força a coluna a virar número matemático
-            df[coluna] = pd.to_numeric(df[coluna], errors='coerce')
-        # -----------------------------------------------------------------------
+        # Apaga linhas sujas (ex: cabeçalhos duplos da OMS) que viraram NaN na coluna de Dias
+        df = df.dropna(subset=['Day'])
+        
+        # Garante que os dias são números inteiros puros para a busca funcionar 100%
+        df['Day'] = df['Day'].astype(int)
         
         return df
 
