@@ -1,3 +1,5 @@
+# diretrizes.py
+
 def obter_classificacao(z, parametro):
     if parametro == "PC":
         if z > 2: return "PC acima do esperado para a idade", "> +2 escores z", "#f57c00"
@@ -47,37 +49,52 @@ def obter_orientacoes(meses):
         }
 
 def obter_esquema_vacinal():
+    # Estrutura em blocos conforme imagem enviada
     return [
-        {"idade": "Ao nascer", "vacinas": [("BCG", "Dose única"), ("Hepatite B", "Dose ao nascer")], "meses_limite": 0},
-        {"idade": "2 meses", "vacinas": [("Penta", "1ª dose"), ("VIP", "1ª dose"), ("Pneumocócica 10V", "1ª dose"), ("Rotavírus", "1ª dose")], "meses_limite": 2},
-        {"idade": "3 meses", "vacinas": [("Meningocócica C", "1ª dose")], "meses_limite": 3},
-        {"idade": "4 meses", "vacinas": [("Penta", "2ª dose"), ("VIP", "2ª dose"), ("Pneumocócica 10V", "2ª dose"), ("Rotavírus", "2ª dose")], "meses_limite": 4},
-        {"idade": "5 meses", "vacinas": [("Meningocócica C", "2ª dose")], "meses_limite": 5},
-        {"idade": "6 meses", "vacinas": [("Penta", "3ª dose"), ("VIP", "3ª dose"), ("Covid-19", "1ª dose"), ("Influenza", "Dose anual")], "meses_limite": 6},
-        {"idade": "7 meses", "vacinas": [("Covid-19", "2ª dose")], "meses_limite": 7},
-        {"idade": "9 meses", "vacinas": [("Febre Amarela", "Dose inicial"), ("Covid-19", "3ª dose")], "meses_limite": 9},
-        {"idade": "12 meses", "vacinas": [("Tríplice Viral", "1ª dose"), ("Pneumocócica 10V", "Reforço"), ("Meningocócica C", "Reforço")], "meses_limite": 12},
-        {"idade": "15 meses", "vacinas": [("DTP", "1º Reforço"), ("VOP", "1º Reforço"), ("Hepatite A", "Dose única"), ("Tetraviral", "Dose única")], "meses_limite": 15},
-        {"idade": "4 anos", "vacinas": [("DTP", "2º Reforço"), ("VOP", "2º Reforço"), ("Varicela", "Dose única"), ("Febre Amarela", "Reforço")], "meses_limite": 48}
+        {"idade": "Ao nascer", "cor": "#6a1b9a", "meses_ref": 0, "vacinas": [
+            {"nome": "BCG", "dose": "Dose única", "doencas": "Tuberculose"},
+            {"nome": "Hepatite B", "dose": "Dose ao nascer", "doencas": "Hepatite B"}
+        ]},
+        {"idade": "2 meses", "cor": "#1565c0", "meses_ref": 2, "vacinas": [
+            {"nome": "Penta", "dose": "1ª dose", "doencas": "Difteria, Tétano, Coqueluche, Hib, Hep B"},
+            {"nome": "VIP", "dose": "1ª dose", "doencas": "Paralisia Infantil"},
+            {"nome": "Pneumocócica 10V", "dose": "1ª dose", "doencas": "Pneumonia, Meningite, Otite"},
+            {"nome": "Rotavírus", "dose": "1ª dose", "doencas": "Diarreia por Rotavírus"}
+        ]},
+        {"idade": "3 meses", "cor": "#2e7d32", "meses_ref": 3, "vacinas": [
+            {"nome": "Meningocócica C", "dose": "1ª dose", "doencas": "Meningite C"}
+        ]},
+        {"idade": "4 meses", "cor": "#1565c0", "meses_ref": 4, "vacinas": [
+            {"nome": "Penta", "dose": "2ª dose", "doencas": "Difteria, Tétano, Coqueluche, Hib, Hep B"},
+            {"nome": "VIP", "dose": "2ª dose", "doencas": "Paralisia Infantil"},
+            {"nome": "Pneumocócica 10V", "dose": "2ª dose", "doencas": "Pneumonia, Meningite, Otite"},
+            {"nome": "Rotavírus", "dose": "2ª dose", "doencas": "Diarreia por Rotavírus"}
+        ]},
+        {"idade": "5 meses", "cor": "#2e7d32", "meses_ref": 5, "vacinas": [
+            {"nome": "Meningocócica C", "dose": "2ª dose", "doencas": "Meningite C"}
+        ]},
+        {"idade": "6 meses", "cor": "#1565c0", "meses_ref": 6, "vacinas": [
+            {"nome": "Penta", "dose": "3ª dose", "doencas": "Difteria, Tétano, Coqueluche, Hib, Hep B"},
+            {"nome": "VIP", "dose": "3ª dose", "doencas": "Paralisia Infantil"},
+            {"nome": "Covid-19", "dose": "1ª dose", "doencas": "Covid-19"},
+            {"nome": "Influenza", "dose": "Dose anual", "doencas": "Gripe"}
+        ]}
     ]
 
-def obter_marcos(meses):
-    marcos_gerais = {
-        "0 a 2 meses": ["Acalma-se quando atendida", "Sorriso social", "Olha para o rosto", "Faz sons além de chorar", "Sustenta a cabeça", "Move braços e pernas de forma simétrica"],
-        "2 a 4 meses": ["Sorri sozinha para chamar atenção", "Dá risadas ao interagir", "Faz sons como 'oooo'", "Leva as mãos à boca", "Rola de lado", "Mantém a cabeça firme"],
-        "4 a 6 meses": ["Reconhece pessoas conhecidas", "Gosta de se olhar no espelho", "Balbucia", "Passa objetos de uma mão para outra", "Senta com apoio", "Eleva o tronco apoiado nas mãos"],
-        "6 a 9 meses": ["Estranha desconhecidos", "Brinca de 'esconde-achou'", "Entende o 'não'", "Faz 'mamama' e 'bababa'", "Senta sem apoio", "Engatinha ou se arrasta"],
-        "9 a 12 meses": ["Bate palmas", "Acena 'tchau'", "Fala 'mama' ou 'dada' com sentido", "Pinça lateral e completa", "Anda com apoio", "Dá os primeiros passos soltos"],
-        "12 a 18 meses": ["Brinca de 'faz de conta' simples", "Mostra afeto", "Fala palavras soltas além de mama/dada", "Empilha blocos", "Rabisca espontaneamente", "Anda sem apoio"],
-        "18 a 24 meses": ["Percebe se os outros estão tristes", "Junta duas palavras (ex: 'quer água')", "Aponta para partes do corpo", "Corre", "Chuta bola", "Sobe em móveis sem ajuda"]
+def obter_marcos_caderneta(meses):
+    # Vigilância oficial da Caderneta
+    marcos = {
+        "0 a 2 meses": ["Observa um rosto?", "Reage ao som?", "Eleva a cabeça?", "Sorriso social?"],
+        "2 a 4 meses": ["Responde ao contato social?", "Emite sons (oooo/aaaa)?", "Sustenta a cabeça?", "Leva mãos à boca?"],
+        "4 a 6 meses": ["Busca objeto?", "Dá risada?", "Rola?", "Senta com apoio?"],
+        "6 a 9 meses": ["Localiza o som?", "Duplica sílabas (mamã/babá)?", "Senta sem apoio?", "Transfere objetos de mão?"],
+        "9 a 12 meses": ["Brinca de esconde-achou?", "Imita gestos (tchau)?", "Senta sozinho?", "Pinça completa?"]
     }
     
     if meses <= 2: chave = "0 a 2 meses"
     elif meses <= 4: chave = "2 a 4 meses"
     elif meses <= 6: chave = "4 a 6 meses"
     elif meses <= 9: chave = "6 a 9 meses"
-    elif meses <= 12: chave = "9 a 12 meses"
-    elif meses <= 18: chave = "12 a 18 meses"
-    else: chave = "18 a 24 meses"
+    else: chave = "9 a 12 meses"
     
-    return chave, marcos_gerais
+    return chave, marcos
