@@ -10,6 +10,7 @@ import pandas as pd
 import plotly.graph_objects as go
 from scipy.stats import norm
 import streamlit as st
+import streamlit.components.v1 as components
 
 from diretrizes import (
     obter_classificacao, obter_faixas_zscore, classificar_peso_ig,
@@ -20,15 +21,44 @@ from diretrizes import (
     calcular_vitamina_a_pnsva, calcular_vitamina_d_sbp, recomendacao_vitaminas,
     imagem_desenvolvimento_por_faixa,
 )
-from estrutura_consulta import (
-    INTERROGATORIO_SEGMENTAR, ANTECEDENTES_MATERNOS, INTERCORRENCIAS_PERINATAIS,
-    ANTECEDENTES_PATOLOGICOS, ANTECEDENTES_FAMILIARES, TRIAGENS_NEONATAIS,
-    TIPOS_ALEITAMENTO, HISTORICO_AME, ALIMENTO_LACTEO_ANTES_6M, PADRAO_FEZES, PADRAO_URINA, SONO, CONDICOES_MORADIA,
-    ECTOSCOPIA, CABECA_PESCOCO, EXAME_RESPIRATORIO, EXAME_CARDIO, EXAME_ABDOMINAL,
-    REFLEXOS_PRIMITIVOS, BRISTOL_FEZES, EXAME_GENITALIA, EXAME_OSTEOMUSCULAR,
-    EXAME_NEUROLOGICO, EXAME_PELE_FANEROS, DOENCAS_MATERNAS_INFECCIOSAS,
-    DOENCAS_MATERNAS_CLINICAS, VACINAS_GESTACAO, EXAMES_COMPLEMENTARES_MODELOS,
-)
+# Importação tolerante da estrutura da consulta.
+# Evita quebrar o app se o repositório estiver temporariamente com uma versão antiga de estrutura_consulta.py.
+try:
+    import estrutura_consulta as _ec
+except Exception:
+    _ec = None
+
+def _ec_get(nome, padrao):
+    return getattr(_ec, nome, padrao) if _ec is not None else padrao
+
+INTERROGATORIO_SEGMENTAR = _ec_get("INTERROGATORIO_SEGMENTAR", {})
+ANTECEDENTES_MATERNOS = _ec_get("ANTECEDENTES_MATERNOS", [])
+INTERCORRENCIAS_PERINATAIS = _ec_get("INTERCORRENCIAS_PERINATAIS", [])
+ANTECEDENTES_PATOLOGICOS = _ec_get("ANTECEDENTES_PATOLOGICOS", [])
+ANTECEDENTES_FAMILIARES = _ec_get("ANTECEDENTES_FAMILIARES", [])
+TRIAGENS_NEONATAIS = _ec_get("TRIAGENS_NEONATAIS", {})
+TIPOS_ALEITAMENTO = _ec_get("TIPOS_ALEITAMENTO", ["Aleitamento materno exclusivo", "Aleitamento materno predominante", "Aleitamento misto", "Fórmula infantil exclusiva", "Leite de vaca/outro leite", "Alimentação da família conforme idade"])
+HISTORICO_AME = _ec_get("HISTORICO_AME", ["Esteve em AME até 6 meses", "AME interrompido antes de 6 meses", "Não esteve em AME", "Não sabe informar"])
+ALIMENTO_LACTEO_ANTES_6M = _ec_get("ALIMENTO_LACTEO_ANTES_6M", ["Fórmula infantil", "Leite de vaca", "Leite de cabra/outro leite", "Misto", "Não sabe informar"])
+PADRAO_FEZES = _ec_get("PADRAO_FEZES", ["Diárias", "A cada 2-3 dias", "Constipação", "Diarreia", "Escape fecal"])
+PADRAO_URINA = _ec_get("PADRAO_URINA", ["Habitual", "Reduzida", "Aumentada", "Disúria", "Urina escura", "Enurese"])
+SONO = _ec_get("SONO", ["Sono adequado", "Despertares noturnos", "Roncos", "Sono agitado", "Sonolência diurna"])
+CONDICOES_MORADIA = _ec_get("CONDICOES_MORADIA", ["Casa de alvenaria", "Apartamento", "Área rural", "Saneamento adequado", "Água tratada", "Animais domésticos", "Tabagismo domiciliar", "Aglomeração domiciliar"])
+ECTOSCOPIA = _ec_get("ECTOSCOPIA", [])
+CABECA_PESCOCO = _ec_get("CABECA_PESCOCO", {})
+EXAME_RESPIRATORIO = _ec_get("EXAME_RESPIRATORIO", {})
+EXAME_CARDIO = _ec_get("EXAME_CARDIO", {})
+EXAME_ABDOMINAL = _ec_get("EXAME_ABDOMINAL", {})
+REFLEXOS_PRIMITIVOS = _ec_get("REFLEXOS_PRIMITIVOS", {})
+BRISTOL_FEZES = _ec_get("BRISTOL_FEZES", ["Tipo 1", "Tipo 2", "Tipo 3", "Tipo 4", "Tipo 5", "Tipo 6", "Tipo 7"])
+EXAME_GENITALIA = _ec_get("EXAME_GENITALIA", [])
+EXAME_OSTEOMUSCULAR = _ec_get("EXAME_OSTEOMUSCULAR", [])
+EXAME_NEUROLOGICO = _ec_get("EXAME_NEUROLOGICO", [])
+EXAME_PELE_FANEROS = _ec_get("EXAME_PELE_FANEROS", [])
+DOENCAS_MATERNAS_INFECCIOSAS = _ec_get("DOENCAS_MATERNAS_INFECCIOSAS", [])
+DOENCAS_MATERNAS_CLINICAS = _ec_get("DOENCAS_MATERNAS_CLINICAS", [])
+VACINAS_GESTACAO = _ec_get("VACINAS_GESTACAO", [])
+EXAMES_COMPLEMENTARES_MODELOS = _ec_get("EXAMES_COMPLEMENTARES_MODELOS", {})
 from medicamentos_sus import listar_principios_ativos, obter_apresentacoes, checar_medicamento
 try:
     from protocolos_ambulatoriais import obter_protocolos_ambulatoriais, campos_do_protocolo, executar_protocolo
@@ -38,6 +68,11 @@ try:
     from ia_prescricao import gerar_passagem_caso_ia, gerar_passagem_caso_local, gerar_orientacao_medicamento_ia, diagnostico_ia_configurada
 except Exception:
     gerar_passagem_caso_ia = gerar_passagem_caso_local = gerar_orientacao_medicamento_ia = diagnostico_ia_configurada = None
+
+try:
+    from mapas_interativos import selecionar_linfodos_por_imagem, selecionar_odontograma_por_imagem
+except Exception:
+    selecionar_linfodos_por_imagem = selecionar_odontograma_por_imagem = None
 
 st.set_page_config(page_title="Puericultura Digital", page_icon="👶", layout="wide", initial_sidebar_state="collapsed")
 
@@ -85,6 +120,171 @@ def html_lista(itens):
 
 def escape_html(s: str) -> str:
     return (s or "").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+
+
+def titulo_opcao(valor):
+    """Mostra opções com inicial maiúscula sem mudar o valor interno."""
+    if valor is None:
+        return ""
+    texto = str(valor)
+    if not texto:
+        return texto
+    return texto[0].upper() + texto[1:]
+
+
+def _render_checkboxes_inline(label, opcoes, key, default=None, cols=2, help=None):
+    """Renderiza checkboxes em grade, sem campo digitável. Útil dentro de popovers/expanders."""
+    default = default or []
+    st.markdown(f"**{label}**")
+    if help:
+        st.caption(help)
+    selecionados = []
+    colunas = st.columns(cols)
+    for i, opcao in enumerate(opcoes):
+        with colunas[i % cols]:
+            if st.checkbox(titulo_opcao(opcao), value=opcao in default, key=f"{key}_{i}"):
+                selecionados.append(opcao)
+    return selecionados
+
+
+def _extras_opcoes(key):
+    texto = st.session_state.get(f"{key}_outros", "") or ""
+    partes = []
+    for pedaco in texto.replace(";", "\n").split("\n"):
+        pedaco = pedaco.strip()
+        if pedaco:
+            partes.append(pedaco)
+    return partes
+
+
+def selecionar_opcoes(label, opcoes, key, default=None, cols=2, help=None, compacto=True, permitir_outros=True):
+    """Seleção sem multiselect/search para não abrir teclado no mobile.
+
+    A tela fica limpa: mostra só um card-resumo moderno. As opções e o campo
+    'outra alteração' aparecem apenas dentro do pop-up. Assim, no celular/tablet
+    o teclado não abre até o usuário tocar no campo livre de complemento.
+    """
+    default = default or []
+    if not compacto:
+        selecionados = _render_checkboxes_inline(label, opcoes, key, default=default, cols=cols, help=help)
+        if permitir_outros:
+            with st.expander("➕ Adicionar alteração não listada", expanded=False):
+                st.text_area("Descrever alteração não listada", key=f"{key}_outros", height=70, placeholder="Uma alteração por linha ou separada por ponto e vírgula.")
+            selecionados += _extras_opcoes(key)
+        return selecionados
+
+    atuais = [x for i, x in enumerate(opcoes) if st.session_state.get(f"{key}_{i}", x in default)]
+    extras = _extras_opcoes(key) if permitir_outros else []
+    todos = atuais + extras
+    resumo = ", ".join([titulo_opcao(x) for x in todos[:3]])
+    if len(todos) > 3:
+        resumo += f" +{len(todos)-3}"
+    if not resumo:
+        resumo = "Nenhum selecionado"
+
+    st.markdown(
+        f"<div class='compact-select-summary modern-select-card'><div class='modern-select-label'>{label}</div><div class='modern-select-value'>{escape_html(resumo)}</div></div>",
+        unsafe_allow_html=True,
+    )
+    with popover_ou_expander(f"🔎 Selecionar / editar — {label}", expanded=False):
+        selecionados = _render_checkboxes_inline("Opções mais comuns", opcoes, key, default=default, cols=cols, help=help)
+        if permitir_outros:
+            st.markdown("**Outra alteração não listada**")
+            st.text_area(
+                "Descrever alteração adicional",
+                key=f"{key}_outros",
+                height=70,
+                placeholder="Ex.: lesão puntiforme em região X; achado específico não listado...",
+                label_visibility="collapsed",
+            )
+            selecionados += _extras_opcoes(key)
+        return selecionados
+
+
+def selecionar_um(label, opcoes, key, index=0, help=None):
+    """Seleção única sem caixa pesquisável, reduzindo abertura de teclado em celular/tablet."""
+    if hasattr(st, "segmented_control") and len(opcoes) <= 5:
+        return st.segmented_control(label, opcoes, default=opcoes[index], key=key, format_func=titulo_opcao, help=help)
+    # Para listas maiores, mantém selectbox por estabilidade; as seleções múltiplas já foram compactadas.
+    return st.selectbox(label, opcoes, index=index, key=key, format_func=titulo_opcao, help=help)
+
+
+def popover_ou_expander(label, expanded=False):
+    return st.popover(label) if hasattr(st, "popover") else st.expander(label, expanded=expanded)
+
+
+def render_linfo_3d():
+    """Visual 3D-like de cabeça/pescoço/ombros para apoiar seleção anatômica dos linfonodos."""
+    components.html(
+        """
+        <div class="anatomy-wrap">
+          <style>
+            .anatomy-wrap{font-family:Inter,system-ui,sans-serif;background:linear-gradient(145deg,#eef7ff,#ffffff);border:1px solid #dbeafe;border-radius:18px;padding:12px;overflow:hidden}
+            .scene{height:310px;display:flex;align-items:center;justify-content:center;perspective:850px}
+            .body{position:relative;width:250px;height:285px;transform:rotateX(8deg) rotateY(-12deg);filter:drop-shadow(0 18px 24px rgba(15,23,42,.22))}
+            .head{position:absolute;left:78px;top:15px;width:94px;height:118px;border-radius:48% 48% 44% 44%;background:radial-gradient(circle at 35% 25%,#ffd9bd,#e9a982 72%);box-shadow:inset -14px -10px 22px rgba(109,40,18,.22)}
+            .ear{position:absolute;width:18px;height:35px;border-radius:50%;background:#e8a47d;top:60px}.ear.l{left:62px}.ear.r{right:62px}
+            .neck{position:absolute;left:99px;top:125px;width:52px;height:68px;border-radius:20px;background:linear-gradient(90deg,#d48b66,#f2bd98,#d48b66)}
+            .shoulders{position:absolute;left:30px;top:178px;width:190px;height:78px;border-radius:80px 80px 30px 30px;background:linear-gradient(135deg,#93c5fd,#2563eb);box-shadow:inset -18px -14px 18px rgba(30,64,175,.3)}
+            .node{position:absolute;border:2px solid #fff;background:#ef4444;color:white;border-radius:999px;font-size:10px;font-weight:800;padding:4px 7px;box-shadow:0 4px 12px rgba(220,38,38,.35)}
+            .n1{left:88px;top:5px}.n2{left:55px;top:55px}.n3{right:53px;top:55px}.n4{left:83px;top:102px}.n5{right:85px;top:102px}.n6{left:55px;top:138px}.n7{right:55px;top:138px}.n8{left:32px;top:182px}.n9{right:28px;top:182px}.n10{left:6px;top:230px}.n11{right:4px;top:230px}
+            .legend{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px;margin-top:6px;font-size:11px;color:#334155}
+          
+.compact-select-summary{
+    border:1px solid var(--border-color,rgba(148,163,184,.35));
+    border-radius:14px;
+    padding:.55rem .7rem;
+    margin:.35rem 0 .25rem 0;
+    background:var(--card-bg,rgba(255,255,255,.82));
+}
+.compact-select-summary span{
+    color:var(--text-muted,#64748b);
+    font-size:.86rem;
+}
+</style>
+          <div class="scene"><div class="body">
+            <div class="ear l"></div><div class="ear r"></div><div class="head"></div><div class="neck"></div><div class="shoulders"></div>
+            <span class="node n1">Occ</span><span class="node n2">Pré</span><span class="node n3">Retro</span><span class="node n4">SubM</span><span class="node n5">SubMn</span>
+            <span class="node n6">CA</span><span class="node n7">CP</span><span class="node n8">SC</span><span class="node n9">IC</span><span class="node n10">Ax</span><span class="node n11">Epi</span>
+          </div></div>
+          <div class="legend"><b>Occ</b> Occipital <b>Pré</b> Pré-auricular <b>Retro</b> Retroauricular <b>SubM</b> Submandibular <b>SubMn</b> Submentoniana <b>CA/CP</b> Cervicais <b>SC/IC</b> Supra/Infraclavicular <b>Ax/Epi</b> Axilar/Epitroclear</div>
+        </div>
+        """,
+        height=380,
+    )
+
+
+def render_dental_3d(denticao: str):
+    """Odontograma 3D-like para apoio visual; seleção estruturada fica nos checkboxes abaixo."""
+    componentes = {
+        "decídua": (["55","54","53","52","51","61","62","63","64","65"], ["85","84","83","82","81","71","72","73","74","75"]),
+        "permanente": (["18","17","16","15","14","13","12","11","21","22","23","24","25","26","27","28"], ["48","47","46","45","44","43","42","41","31","32","33","34","35","36","37","38"]),
+    }
+    if denticao == "mista":
+        sup = ["16","55","54","53","52","51","61","62","63","64","65","26"]
+        inf = ["46","85","84","83","82","81","71","72","73","74","75","36"]
+    elif denticao == "decídua":
+        sup, inf = componentes["decídua"]
+    else:
+        sup, inf = componentes["permanente"]
+
+    def row_html(vals):
+        return "".join([f"<span class='tooth'>{v}</span>" for v in vals])
+
+    components.html(f"""
+    <div class='dental-wrap'>
+      <style>
+        .dental-wrap{{font-family:Inter,system-ui,sans-serif;background:linear-gradient(160deg,#fff7ed,#fff);border:1px solid #fed7aa;border-radius:18px;padding:12px}}
+        .mouth{{background:radial-gradient(ellipse at center,#fecaca 0,#fb7185 50%,#9f1239 100%);border-radius:48% 48% 52% 52%;padding:20px 14px;box-shadow:inset 0 18px 25px rgba(255,255,255,.35),0 16px 24px rgba(127,29,29,.25)}}
+        .arch{{display:flex;justify-content:center;gap:4px;margin:8px 0;flex-wrap:wrap}}
+        .tooth{{width:30px;height:38px;border-radius:45% 45% 35% 35%;background:linear-gradient(145deg,#fff,#e5e7eb);border:1px solid #cbd5e1;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:#475569;box-shadow:inset -3px -5px 8px rgba(100,116,139,.15),0 3px 8px rgba(15,23,42,.18)}}
+        .lower .tooth{{border-radius:35% 35% 45% 45%}}
+        .label{{text-align:center;font-size:12px;font-weight:800;color:#7f1d1d;margin:4px}}
+      </style>
+      <div class='label'>Odontograma visual — {denticao.title()}</div>
+      <div class='mouth'><div class='arch upper'>{row_html(sup)}</div><div class='arch lower'>{row_html(inf)}</div></div>
+    </div>
+    """, height=260)
 
 
 @st.cache_data(show_spinner=False)
@@ -201,36 +401,46 @@ def plotar_crescimento(df, parametro, titulo, unidade, valor, idade_dias, idade_
 
 def css(sexo: str):
     accent = "#0f766e" if sexo == "Masculino" else "#7e22ce"
-    return f"""
+    template = """
     <style>
-    :root {{ --accent:{accent}; --card:rgba(255,255,255,.92); --border:rgba(100,116,139,.24); --text:#0f172a; --muted:#475569; --chip:color-mix(in srgb, var(--accent) 12%, white); --shadow:0 14px 34px rgba(15,23,42,.08); }}
-    @media (prefers-color-scheme: dark) {{ :root {{ --card:rgba(15,23,42,.86); --border:rgba(148,163,184,.28); --text:#e2e8f0; --muted:#cbd5e1; --chip:rgba(30,41,59,.9); --shadow:0 16px 34px rgba(0,0,0,.28); }} .stApp {{ background:linear-gradient(135deg,#020617,#111827 55%,#1e293b)!important; color:var(--text); }} }}
-    .stApp {{ background:linear-gradient(135deg, color-mix(in srgb, var(--accent) 10%, white), #f8fafc 48%, #ffffff); }}
-    .block-container {{ padding-top:4.6rem; max-width:1500px; }}
-    h1,h2,h3 {{ color:var(--accent)!important; }}
-    .hero {{ padding:1.2rem 1.4rem; border-radius:24px; background:var(--card); border:1px solid var(--border); box-shadow:var(--shadow); margin:.4rem 0 1rem; }}
-    .hero h1 {{ margin:0; font-size:clamp(1.6rem,2.5vw,2.4rem); }} .hero p {{ color:var(--muted); margin:.25rem 0 0; }}
-    .top-panel {{ position:sticky; top:3.2rem; z-index:999; padding:1rem; border-radius:22px; background:var(--card); border:1px solid var(--border); box-shadow:var(--shadow); backdrop-filter:blur(10px); margin-bottom:1rem; }}
-    .metric-pill {{ display:inline-block; padding:.52rem .75rem; border-radius:999px; background:var(--chip); color:var(--accent); font-weight:850; margin:.2rem .35rem .2rem 0; }}
-    .soft-card,.risk-box,.vaccine-board,.timeline-card {{ background:var(--card); color:var(--text); border:1px solid var(--border); border-radius:22px; padding:1rem; box-shadow:var(--shadow); margin-bottom:1rem; }}
-    .soft-title {{ font-size:1.05rem; font-weight:950; color:var(--accent); margin-bottom:.45rem; }}
-    .small-muted {{ color:var(--muted); font-size:.9rem; }}
-    .result-card {{ display:flex; justify-content:space-between; gap:1rem; align-items:center; padding:1rem 1.1rem; border-radius:22px; color:white; background:linear-gradient(135deg,var(--result-color), color-mix(in srgb, var(--result-color) 70%, black)); box-shadow:var(--shadow); margin:.5rem 0 1rem; }}
-    .result-card h3 {{ color:white!important; margin:.15rem 0 0; }} .result-metrics {{ text-align:right; }}
-    .passagem-box,.prescricao {{ white-space:pre-wrap; background:rgba(15,23,42,.05); border:1px solid var(--border); padding:1rem; border-radius:18px; color:var(--text); font-family:inherit; line-height:1.55; }}
-    .timeline {{ display:flex; gap:.7rem; overflow-x:auto; padding:.4rem 0 1rem; }} .timeline-card {{ min-width:220px; }} .timeline-card.current {{ border:2px solid var(--accent); }} .timeline-dot {{ width:16px; height:16px; border-radius:50%; background:var(--accent); display:inline-block; margin-right:.4rem; }}
-    .dev-instruction {{ background:color-mix(in srgb, var(--accent) 8%, transparent); border:1px dashed var(--accent); padding:.9rem; border-radius:18px; margin:.7rem 0; }}
-    /* Vacinas: largura fixa para não alargar quando há poucos cards */
-    .vaccine-board {{ overflow-x:auto; padding:1rem; }} .vaccine-board-title {{ font-size:1.15rem; font-weight:950; color:var(--accent); margin:.2rem 0 .75rem; }}
-    .vaccine-age-section {{ margin-top:.9rem; }} .vaccine-age-title {{ font-weight:950; color:var(--accent); margin:.55rem 0 .5rem; font-size:.98rem; }}
-    .vaccine-card-grid {{ display:grid!important; grid-template-columns:repeat(auto-fill, 150px)!important; gap:.75rem!important; justify-content:flex-start!important; align-items:stretch!important; }}
-    .vaccine-card-link {{ width:150px!important; max-width:150px!important; min-height:122px; text-decoration:none!important; color:#111827!important; display:block; border-radius:18px; padding:.72rem .62rem; border:1px solid rgba(15,23,42,.20); box-shadow:0 8px 20px rgba(15,23,42,.12); position:relative; overflow:hidden; transition:.15s; }}
-    .vaccine-card-link:hover {{ transform:translateY(-2px); box-shadow:0 12px 26px rgba(15,23,42,.18); filter:saturate(1.08); }} .vaccine-card-link.future {{ filter:saturate(.55); opacity:.58; box-shadow:none; }} .vaccine-card-link.done {{ outline:3px solid rgba(34,197,94,.35); }} .vaccine-card-link.late {{ outline:3px solid rgba(220,38,38,.48); }} .vaccine-card-link.pending {{ outline:3px solid rgba(245,158,11,.42); }}
-    .vaccine-card-age {{ font-size:.72rem; font-weight:900; opacity:.82; margin-bottom:.22rem; }} .vaccine-card-name {{ font-size:.9rem; font-weight:950; line-height:1.08; }} .vaccine-card-dose {{ margin-top:.35rem; font-size:.74rem; font-weight:800; opacity:.86; }} .vaccine-card-status {{ position:absolute; left:.5rem; right:.5rem; bottom:.45rem; font-size:.65rem; font-weight:900; background:rgba(255,255,255,.72); border-radius:999px; padding:.18rem .4rem; text-align:center; }}
-    .vaccine-modal {{ display:none; position:fixed; z-index:999999; inset:0; padding:5.2rem 1rem 1rem; background:rgba(2,6,23,.62); backdrop-filter:blur(4px); overflow:auto; }} .vaccine-modal:target {{ display:block; }} .vaccine-modal-card {{ max-width:760px; margin:0 auto; background:var(--card); color:var(--text); border:1px solid var(--border); border-radius:24px; padding:1.15rem; box-shadow:0 24px 70px rgba(0,0,0,.35); }} .vaccine-modal-close {{ float:right; text-decoration:none!important; color:var(--text)!important; background:var(--chip); border:1px solid var(--border); border-radius:999px; padding:.28rem .62rem; font-weight:900; }} .vaccine-pill {{ display:inline-block; padding:.22rem .55rem; border-radius:999px; font-size:.78rem; font-weight:850; margin:.1rem .25rem .1rem 0; background:var(--chip); border:1px solid var(--border); color:var(--accent); }}
-    @media (max-width:760px) {{ .block-container {{ padding-top:3.8rem; }} .top-panel {{ top:3.55rem; border-radius:18px; }} .result-card {{ flex-direction:column; align-items:flex-start; }} .result-metrics {{ text-align:left; }} .vaccine-card-grid {{ grid-template-columns:repeat(2, minmax(0,1fr))!important; }} .vaccine-card-link {{ width:auto!important; max-width:none!important; min-height:112px; }} }}
+    :root { --accent:__ACCENT__; --card:rgba(255,255,255,.92); --border:rgba(100,116,139,.24); --text:#0f172a; --muted:#475569; --title:#0f766e; --chip:color-mix(in srgb, var(--accent) 12%, white); --shadow:0 14px 34px rgba(15,23,42,.08); }
+    @media (prefers-color-scheme: dark) { :root { --card:rgba(15,23,42,.94); --border:rgba(226,232,240,.22); --text:#f8fafc; --muted:#d1d5db; --title:#e0f2fe; --accent:#ccfbf1; --chip:rgba(20,184,166,.20); --shadow:0 16px 34px rgba(0,0,0,.28); } .stApp { background:linear-gradient(135deg,#020617,#111827 55%,#1e293b)!important; color:var(--text)!important; } }
+    .stApp { background:linear-gradient(135deg, color-mix(in srgb, var(--accent) 10%, white), #f8fafc 48%, #ffffff); color:var(--text); }
+    .block-container { padding-top:4.6rem; max-width:1500px; }
+    h1,h2,h3 { color:var(--accent)!important; }
+    @media (prefers-color-scheme: dark) { h1,h2,h3,h4,h5,h6 { color:var(--title)!important; } p,li,label,span,div,.stMarkdown,.stText { color:var(--text)!important; } .small-muted,.caption,.vaccine-caption,.vaccine-card-age,.vaccine-card-dose,.modern-select-value { color:var(--muted)!important; } }
+    .hero { padding:1.2rem 1.4rem; border-radius:24px; background:var(--card); border:1px solid var(--border); box-shadow:var(--shadow); margin:.4rem 0 1rem; }
+    .hero h1 { margin:0; font-size:clamp(1.6rem,2.5vw,2.4rem); } .hero p { color:var(--muted); margin:.25rem 0 0; }
+    .top-panel { position:sticky; top:3.2rem; z-index:999; padding:1rem; border-radius:22px; background:var(--card); border:1px solid var(--border); box-shadow:var(--shadow); backdrop-filter:blur(10px); margin-bottom:1rem; }
+    .metric-pill { display:inline-block; padding:.52rem .75rem; border-radius:999px; background:var(--chip); color:var(--accent); font-weight:850; margin:.2rem .35rem .2rem 0; }
+    .soft-card,.risk-box,.vaccine-board,.timeline-card { background:var(--card); color:var(--text); border:1px solid var(--border); border-radius:22px; padding:1rem; box-shadow:var(--shadow); margin-bottom:1rem; }
+    .soft-title { font-size:1.05rem; font-weight:950; color:var(--accent); margin-bottom:.45rem; }
+    .small-muted { color:var(--muted); font-size:.9rem; }
+    .result-card { display:flex; justify-content:space-between; gap:1rem; align-items:center; padding:1rem 1.1rem; border-radius:22px; color:white; background:linear-gradient(135deg,var(--result-color), color-mix(in srgb, var(--result-color) 70%, black)); box-shadow:var(--shadow); margin:.5rem 0 1rem; }
+    .result-card h3 { color:white!important; margin:.15rem 0 0; } .result-metrics { text-align:right; }
+    .passagem-box,.prescricao { white-space:pre-wrap; background:rgba(15,23,42,.05); border:1px solid var(--border); padding:1rem; border-radius:18px; color:var(--text); font-family:inherit; line-height:1.55; }
+    @media (prefers-color-scheme: dark) { .passagem-box,.prescricao { background:rgba(226,232,240,.06)!important; color:var(--text)!important; } }
+    .timeline { display:flex; gap:.7rem; overflow-x:auto; padding:.4rem 0 1rem; } .timeline-card { min-width:220px; } .timeline-card.current { border:2px solid var(--accent); } .timeline-dot { width:16px; height:16px; border-radius:50%; background:var(--accent); display:inline-block; margin-right:.4rem; }
+    .dev-instruction { background:color-mix(in srgb, var(--accent) 8%, transparent); border:1px dashed var(--accent); padding:.9rem; border-radius:18px; margin:.7rem 0; }
+    .vaccine-board { overflow-x:auto; padding:1rem; } .vaccine-board-title { font-size:1.15rem; font-weight:950; color:var(--accent); margin:.2rem 0 .75rem; }
+    .vaccine-age-section { margin-top:.9rem; } .vaccine-age-title { font-weight:950; color:var(--accent); margin:.55rem 0 .5rem; font-size:.98rem; }
+    .vaccine-card-grid { display:grid!important; grid-template-columns:repeat(auto-fill, 150px)!important; gap:.75rem!important; justify-content:flex-start!important; align-items:stretch!important; }
+    .vaccine-card-link { width:150px!important; max-width:150px!important; min-height:122px; text-decoration:none!important; color:#111827!important; display:block; border-radius:18px; padding:.72rem .62rem; border:1px solid rgba(15,23,42,.20); box-shadow:0 8px 20px rgba(15,23,42,.12); position:relative; overflow:hidden; transition:.15s; }
+    .vaccine-card-link:hover { transform:translateY(-2px); box-shadow:0 12px 26px rgba(15,23,42,.18); filter:saturate(1.08); } .vaccine-card-link.future { filter:saturate(.55); opacity:.58; box-shadow:none; } .vaccine-card-link.done { outline:3px solid rgba(34,197,94,.35); } .vaccine-card-link.late { outline:3px solid rgba(220,38,38,.48); } .vaccine-card-link.pending { outline:3px solid rgba(245,158,11,.42); }
+    .vaccine-card-age { font-size:.72rem; font-weight:900; opacity:.82; margin-bottom:.22rem; color:#111827!important; } .vaccine-card-name { font-size:.9rem; font-weight:950; line-height:1.08; color:#111827!important; } .vaccine-card-dose { margin-top:.35rem; font-size:.74rem; font-weight:800; opacity:.86; color:#111827!important; } .vaccine-card-status { position:absolute; left:.5rem; right:.5rem; bottom:.45rem; font-size:.65rem; font-weight:900; background:rgba(255,255,255,.72); border-radius:999px; padding:.18rem .4rem; text-align:center; color:#111827!important; }
+    .vaccine-modal { display:none; position:fixed; z-index:999999; inset:0; padding:5.2rem 1rem 1rem; background:rgba(2,6,23,.62); backdrop-filter:blur(4px); overflow:auto; } .vaccine-modal:target { display:block; } .vaccine-modal-card { max-width:760px; margin:0 auto; background:var(--card); color:var(--text); border:1px solid var(--border); border-radius:24px; padding:1.15rem; box-shadow:0 24px 70px rgba(0,0,0,.35); } .vaccine-modal-close { float:right; text-decoration:none!important; color:var(--text)!important; background:var(--chip); border:1px solid var(--border); border-radius:999px; padding:.28rem .62rem; font-weight:900; } .vaccine-pill { display:inline-block; padding:.22rem .55rem; border-radius:999px; font-size:.78rem; font-weight:850; margin:.1rem .25rem .1rem 0; background:var(--chip); border:1px solid var(--border); color:var(--accent); }
+    .modern-select-card { position:relative; overflow:hidden; border:1px solid var(--border); border-radius:18px; padding:.72rem .85rem; margin:.38rem 0 .28rem; background:linear-gradient(135deg, color-mix(in srgb, var(--accent) 7%, var(--card)), var(--card)); box-shadow:0 8px 20px rgba(15,23,42,.06); }
+    .modern-select-card:before { content:""; position:absolute; left:0; top:0; bottom:0; width:5px; background:var(--accent); opacity:.8; }
+    .modern-select-label { font-weight:900; color:var(--accent); font-size:.92rem; padding-left:.25rem; }
+    .modern-select-value { color:var(--muted); font-size:.88rem; margin-top:.18rem; padding-left:.25rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    div[data-testid="stPopover"] button { border-radius:14px!important; border:1px solid var(--border)!important; background:var(--chip)!important; color:var(--accent)!important; font-weight:850!important; }
+    div[data-testid="stExpander"] details { border-radius:18px!important; border:1px solid var(--border)!important; background:var(--card)!important; box-shadow:0 8px 18px rgba(15,23,42,.05); }
+    div[data-testid="stExpander"] summary { font-weight:900!important; color:var(--accent)!important; }
+    .map-card { background:var(--card); border:1px solid var(--border); border-radius:22px; padding:1rem; box-shadow:var(--shadow); margin-bottom:1rem; }
+    @media (max-width:760px) { .block-container { padding-top:3.8rem; } .top-panel { top:3.55rem; border-radius:18px; } .result-card { flex-direction:column; align-items:flex-start; } .result-metrics { text-align:left; } .vaccine-card-grid { grid-template-columns:repeat(2, minmax(0,1fr))!important; } .vaccine-card-link { width:auto!important; max-width:none!important; min-height:112px; } }
     </style>
     """
+    return template.replace("__ACCENT__", accent)
 
 # =========================
 # Vacinas HTML
@@ -305,6 +515,7 @@ def montar_dados_passagem():
         "nascimento": st.session_state.get("passagem_nascimento", {}),
         "consulta": st.session_state.get("passagem_consulta", {}),
         "exame_fisico": st.session_state.get("passagem_exame", {}),
+        "mapas_clinicos": {"linfonodos": st.session_state.get("linfonodos_localizacao_mapa", []), "odontograma": st.session_state.get("odontograma_alteracoes_mapa", [])},
         "crescimento": st.session_state.get("passagem_crescimento", {}),
         "desenvolvimento": st.session_state.get("passagem_desenvolvimento", {}),
         "vacinas": st.session_state.get("passagem_vacinas", {}),
@@ -391,35 +602,54 @@ tabelas = carregar_tabelas()
 st.markdown("<div class='hero'><h1>👶 Puericultura Digital</h1><p>Análise clínica por idade, sexo, crescimento, desenvolvimento, imunizações, suplementação, orientações e passagem de caso.</p></div>", unsafe_allow_html=True)
 
 with st.expander("🧾 Identificação, nascimento e exame físico objetivo", expanded=True):
-    st.markdown("### Identificação e nascimento")
-    c1,c2,c3,c4 = st.columns(4)
+    st.markdown("### Identificação")
+    c1, c2, c3 = st.columns(3)
     with c1:
         sexo = st.selectbox("Sexo", ["Masculino", "Feminino"])
-        data_nasc = st.date_input("Data de nascimento", value=date(2023,1,1), format="DD/MM/YYYY")
     with c2:
-        data_aval = st.date_input("Data da consulta", value=date.today(), format="DD/MM/YYYY")
-        st.caption("Aleitamento, fórmula e dieta são preenchidos em Hábitos de vida.")
+        data_nasc = st.date_input("Data de nascimento", value=date(2023, 1, 1), format="DD/MM/YYYY")
     with c3:
+        data_aval = st.date_input("Data da consulta", value=date.today(), format="DD/MM/YYYY")
+
+    st.markdown("### Dados ao nascer")
+    n1, n2, n3, n4, n5 = st.columns([1, 1, 1, 1, 1])
+    with n1:
         peso_nasc_g = st.number_input("Peso ao nascer (g)", 300, 6500, 3200, step=10)
-    with c4:
-        igc1, igc2 = st.columns(2)
-        with igc1:
-            ig_sem = st.number_input("IG semanas", 22, 42, 39, step=1)
-        with igc2:
-            ig_dias = st.number_input("IG dias", 0, 6, 0, step=1)
-        idade_gest_sem = float(ig_sem) + float(ig_dias)/7
-        prematuro = idade_gest_sem < 37
+    with n2:
+        estatura_nasc_cm = st.number_input("Estatura ao nascer (cm)", 0.0, 70.0, 0.0, step=0.5)
+    with n3:
+        pc_nasc_cm = st.number_input("PC ao nascer (cm)", 0.0, 50.0, 0.0, step=0.1)
+    with n4:
+        ig_sem = st.number_input("IG ao nascer — semanas", 22, 42, 39, step=1)
+    with n5:
+        ig_dias = st.number_input("IG ao nascer — dias", 0, 6, 0, step=1)
+    ap1, ap2 = st.columns(2)
+    with ap1:
+        apgar1 = st.number_input("Apgar 1º minuto", 0, 10, 0, step=1)
+    with ap2:
+        apgar5 = st.number_input("Apgar 5º minuto", 0, 10, 0, step=1)
+    idade_gest_sem = float(ig_sem) + float(ig_dias) / 7
+    prematuro = idade_gest_sem < 37
+
     st.markdown("### Exame físico — sinais vitais e antropometria atual")
-    v1,v2,v3,v4,v5 = st.columns(5)
-    with v1: temp = st.number_input("Temp. (°C)", 34.0, 42.0, 36.5, step=0.1)
-    with v2: fc = st.number_input("FC (bpm)", 40, 240, 100, step=1)
-    with v3: fr = st.number_input("FR (irpm)", 10, 100, 24, step=1)
-    with v4: spo2 = st.number_input("SpO₂ (%)", 50, 100, 98, step=1)
-    with v5: pa = st.text_input("PA", value="")
-    a1,a2,a3 = st.columns(3)
-    with a1: peso = st.number_input("Peso atual (kg)", 0.5, 100.0, 10.0, step=0.1)
-    with a2: estatura = st.number_input("Comprimento/estatura atual (cm)", 30.0, 170.0, 80.0, step=0.5)
-    with a3: pc = st.number_input("Perímetro cefálico atual (cm)", 20.0, 70.0, 45.0, step=0.1)
+    v1, v2, v3, v4, v5 = st.columns(5)
+    with v1:
+        temp = st.number_input("Temp. (°C)", 34.0, 42.0, 36.5, step=0.1)
+    with v2:
+        fc = st.number_input("FC (bpm)", 0, 240, 0, step=1)
+    with v3:
+        fr = st.number_input("FR (irpm)", 0, 100, 0, step=1)
+    with v4:
+        spo2 = st.number_input("SpO₂ (%)", 0, 100, 0, step=1)
+    with v5:
+        pa = st.text_input("PA", value="")
+    a1, a2, a3 = st.columns(3)
+    with a1:
+        peso = st.number_input("Peso atual (kg)", 0.5, 100.0, 10.0, step=0.1)
+    with a2:
+        estatura = st.number_input("Comprimento/estatura atual (cm)", 30.0, 170.0, 80.0, step=0.5)
+    with a3:
+        pc = st.number_input("Perímetro cefálico atual (cm)", 20.0, 70.0, 45.0, step=0.1)
 
 idade_dias_cron = max(0, (data_aval - data_nasc).days)
 correcao_dias = max(0, int(round((40 - idade_gest_sem) * 7))) if prematuro else 0
@@ -433,14 +663,42 @@ res_ant = classificar_antropometria(tabelas, sexo, idade_dias, idade_meses_float
 
 st.markdown(css(sexo), unsafe_allow_html=True)
 
+# Comportamento tipo accordion: ao abrir uma seção/expander, tenta fechar as demais.
+# Em Streamlit puro isso depende da estrutura interna do navegador, então fica como melhoria progressiva.
+components.html("""
+<script>
+(function(){
+  function install(){
+    try{
+      const doc = window.parent.document;
+      const details = Array.from(doc.querySelectorAll('details'));
+      details.forEach((d)=>{
+        if(d.dataset.accordionBound === '1') return;
+        d.dataset.accordionBound = '1';
+        d.addEventListener('toggle', ()=>{
+          if(d.open){
+            Array.from(doc.querySelectorAll('details')).forEach((other)=>{
+              if(other !== d && other.open) other.open = false;
+            });
+          }
+        });
+      });
+    }catch(e){}
+  }
+  install();
+  setInterval(install, 1200);
+})();
+</script>
+""", height=0)
+
 st.session_state["passagem_crianca"] = {"sexo": sexo, "data_nascimento": fmt_data(data_nasc), "data_consulta": fmt_data(data_aval), "idade_cronologica": idade_texto(idade_dias_cron), "idade_corrigida": idade_texto(idade_dias)}
-st.session_state["passagem_nascimento"] = {"ig": f"{ig_sem}s {ig_dias}d", "peso_nascimento": f"{peso_nasc_g:.0f} g", "classificacao": class_nasc, "riscos": riscos_nasc}
+st.session_state["passagem_nascimento"] = {"ig": f"{ig_sem}s {ig_dias}d", "classificacao_ig": class_ig, "peso_nascimento": f"{peso_nasc_g:.0f} g", "estatura_nascimento": f"{estatura_nasc_cm:.1f} cm" if estatura_nasc_cm else "não informado", "pc_nascimento": f"{pc_nasc_cm:.1f} cm" if pc_nasc_cm else "não informado", "apgar": f"1º min {apgar1}; 5º min {apgar5}", "classificacao": class_nasc, "riscos": riscos_nasc}
 
 st.markdown(f"""
 <div class='top-panel'><b>Resumo fixo da criança</b><br>
 <span class='metric-pill'>Sexo: {sexo}</span><span class='metric-pill'>Nascimento: {fmt_data(data_nasc)}</span><span class='metric-pill'>Consulta: {fmt_data(data_aval)}</span>
 <span class='metric-pill'>Idade cronológica: {idade_texto(idade_dias_cron)}</span><span class='metric-pill'>Idade corrigida: {idade_texto(idade_dias)}</span>
-<span class='metric-pill'>IG: {ig_sem}s {ig_dias}d</span><span class='metric-pill'>PN: {peso_nasc_g:.0f}g · {class_nasc}</span>
+<span class='metric-pill'>IG: {ig_sem}s {ig_dias}d · {class_ig}</span><span class='metric-pill'>PN: {peso_nasc_g:.0f}g · {class_nasc}</span><span class='metric-pill'>Apgar: {apgar1}/{apgar5}</span>
 <span class='metric-pill'>Atual: {peso:.1f}kg · {estatura:.1f}cm · PC {pc:.1f}cm · IMC {imc:.1f}</span></div>
 """, unsafe_allow_html=True)
 
@@ -460,7 +718,7 @@ if tabelas is None:
 
 faixa, rx = faixa_x_por_idade(idade_meses_float)
 
-tabs = st.tabs(["🩺 Anamnese e exame", "📈 Crescimento", "🧠 Desenvolvimento", "💉 Imunizações", "💊 Ferro e vitaminas", "🩺 Ambulatório", "📝 Orientações"])
+tabs = st.tabs(["🩺 Anamnese e exame", "📈 Crescimento", "🧠 Desenvolvimento", "💉 Imunizações", "💊 Ferro e vitaminas", "🩺 Ambulatório", "📝 Orientações", "🗺️ Mapas clínicos"])
 
 with tabs[0]:
     st.subheader("🩺 Anamnese estruturada e exame físico")
@@ -473,7 +731,7 @@ with tabs[0]:
     cols = st.columns(2)
     for i, (seg, ops) in enumerate(INTERROGATORIO_SEGMENTAR.items()):
         with cols[i % 2]:
-            inter[seg] = st.multiselect(seg, ops, key=f"is_{seg}")
+            inter[seg] = selecionar_opcoes(seg, ops, key=f"is_{seg}")
     inter_obs = st.text_area("Complemento do interrogatório sintomatológico", height=70)
 
     meds = render_lista_medicamentos("meduso", "Medicamentos em uso / suplementações profiláticas", idade_texto(idade_dias), peso, maximo=10)
@@ -497,8 +755,8 @@ with tabs[0]:
                 with fc3: obs_f = st.text_input("Observação", key=f"filho_obs_{i}")
                 filhos.append({"sexo": sx_f, "idade": idade_f, "observacao": obs_f})
 
-    ant_mat_inf = st.multiselect("Infecções/intercorrências infecciosas maternas", DOENCAS_MATERNAS_INFECCIOSAS)
-    ant_mat_clin = st.multiselect("Doenças/comorbidades/intercorrências clínicas/obstétricas maternas", DOENCAS_MATERNAS_CLINICAS)
+    ant_mat_inf = selecionar_opcoes("Infecções/intercorrências infecciosas maternas", DOENCAS_MATERNAS_INFECCIOSAS, key="ant_mat_inf")
+    ant_mat_clin = selecionar_opcoes("Doenças/comorbidades/intercorrências clínicas/obstétricas maternas", DOENCAS_MATERNAS_CLINICAS, key="ant_mat_clin")
     ant_mat_det = {}
     for inf in ant_mat_inf:
         with st.expander(f"Detalhes — {inf}", expanded=False):
@@ -516,11 +774,11 @@ with tabs[0]:
 
     meds_gest = render_lista_medicamentos("medgest", "Medicamentos maternos usados na gestação", idade_texto(idade_dias), peso, maximo=8)
     sups_gest = render_lista_medicamentos("supgest", "Suplementações maternas na gestação", idade_texto(idade_dias), peso, maximo=6)
-    vac_gest = st.multiselect("Vacinação na gestação", VACINAS_GESTACAO)
+    vac_gest = selecionar_opcoes("Vacinação na gestação", VACINAS_GESTACAO, key="vac_gest")
     vac_gest_obs = st.text_input("Observações sobre vacinação gestacional")
 
     st.markdown("### Antecedentes perinatais e triagens neonatais")
-    ant_peri = st.multiselect("Intercorrências perinatais/neonatais", INTERCORRENCIAS_PERINATAIS)
+    ant_peri = selecionar_opcoes("Intercorrências perinatais/neonatais", INTERCORRENCIAS_PERINATAIS, key="ant_peri")
     peri_det = {}
     campos_peri = {
         "internação neonatal": "Internação neonatal: motivo e duração",
@@ -544,18 +802,18 @@ with tabs[0]:
                 triagens[teste + " — detalhe"] = st.text_input(f"Detalhe: {teste}", key=f"triagem_det_{teste}")
 
     st.markdown("### Antecedentes patológicos e familiares")
-    ant_pat = st.multiselect("Antecedentes patológicos", ANTECEDENTES_PATOLOGICOS)
+    ant_pat = selecionar_opcoes("Antecedentes patológicos", ANTECEDENTES_PATOLOGICOS, key="ant_pat")
     det_pat = {}
     for item in ["internações", "cirurgias", "alergias medicamentosas", "alergias alimentares", "convulsões", "transfusões", "acidentes/intoxicações"]:
         if item in ant_pat:
             det_pat[item] = st.text_input(f"Detalhar {item}: motivo, data, duração/procedimento", key=f"det_{item}")
     meds_pat = render_lista_medicamentos("medpat", "Medicamentos já utilizados para antecedentes patológicos", idade_texto(idade_dias), peso, maximo=8)
-    ant_fam = st.multiselect("Antecedentes familiares", ANTECEDENTES_FAMILIARES)
+    ant_fam = selecionar_opcoes("Antecedentes familiares", ANTECEDENTES_FAMILIARES, key="ant_fam")
 
     st.markdown("### Hábitos de vida")
     hab1,hab2 = st.columns(2)
     with hab1:
-        alimentacao = st.multiselect("Alimentação/aleitamento atual", TIPOS_ALEITAMENTO)
+        alimentacao = selecionar_opcoes("Alimentação/aleitamento atual", TIPOS_ALEITAMENTO, key="alimentacao")
         # Histórico de AME permanece relevante mesmo após a introdução alimentar,
         # pois influencia a análise de ferro profilático e risco de anemia.
         if idade_meses_cron >= 6:
@@ -568,13 +826,15 @@ with tabs[0]:
         formula = ""
         if "fórmula infantil exclusiva" in alimentacao or "aleitamento misto" in alimentacao:
             formula = st.text_input("Fórmula atual: marca/tipo, volume, frequência, diluição")
-        sono = st.multiselect("Sono", SONO)
-        telas = st.selectbox("Telas", ["não usa", "uso ocasional", "< 1h/dia", "1–2h/dia", "> 2h/dia", "não informado"])
+        sono = selecionar_opcoes("Sono", SONO, key="sono")
+        telas = selecionar_um("Telas", ["não usa", "uso ocasional", "< 1h/dia", "1–2h/dia", "> 2h/dia", "não informado"], key="telas")
     with hab2:
-        fezes = st.multiselect("Fezes — queixas/padrão", PADRAO_FEZES)
-        bristol = st.selectbox("Escala de Bristol", BRISTOL_FEZES)
-        urina = st.multiselect("Micção", PADRAO_URINA)
-        desfralde = st.selectbox("Desfralde/controle esfincteriano", ["não se aplica pela idade", "não iniciado", "em treinamento", "diurno adquirido", "diurno e noturno adquiridos", "regressão/perdas"])
+        fezes = selecionar_opcoes("Fezes — queixas/padrão", PADRAO_FEZES, key="fezes")
+        bristol = st.selectbox("Escala de Bristol", BRISTOL_FEZES, format_func=titulo_opcao)
+        freq_fezes = st.text_input("Frequência evacuatória", value="0", help="Ex.: 1x/dia, 3x/semana, 5x/dia")
+        urina = selecionar_opcoes("Micção/diurese", PADRAO_URINA, key="urina")
+        freq_urina = st.text_input("Frequência urinária/diurese", value="0", help="Ex.: 6 fraldas/dia, 5 micções/dia")
+        desfralde = selecionar_um("Desfralde/controle esfincteriano", ["não se aplica pela idade", "não iniciado", "em treinamento", "diurno adquirido", "diurno e noturno adquiridos", "regressão/perdas"], key="desfralde")
         atividade = st.text_input("Atividade física/brincadeiras/creche/escola")
     ame_adequado_para_ferro = (historico_ame in ("esteve em AME até 6 meses", "AME em curso"))
     fatores_alimentares_anemia_auto = []
@@ -584,7 +844,7 @@ with tabs[0]:
         fatores_alimentares_anemia_auto.append("AME ausente/interrompido antes de 6 meses — avaliar dieta/fórmula fortificada")
 
     st.markdown("### Condições socioeconômicas")
-    socio = st.multiselect("Condições socioeconômicas/moradia", CONDICOES_MORADIA)
+    socio = selecionar_opcoes("Condições socioeconômicas/moradia", CONDICOES_MORADIA, key="socio")
     sc1,sc2,sc3 = st.columns(3)
     with sc1: tipo_casa = st.selectbox("Tipo de moradia", ["não informado", "casa", "apartamento", "cômodo", "zona rural", "outro"])
     with sc2: comodos = st.number_input("Número de cômodos", 0, 20, 0, step=1)
@@ -593,37 +853,163 @@ with tabs[0]:
     coabit = st.text_input("Coabitantes/cuidadores principais")
 
     st.markdown("## Exame físico")
-    geral = st.multiselect("Geral / ectoscopia", ECTOSCOPIA, default=["bom estado geral", "ativo e reativo", "hidratado", "corado", "acianótico", "anicterico", "eupneico"])
+    geral = selecionar_opcoes(
+        "Geral / ectoscopia",
+        ECTOSCOPIA,
+        key="geral_ectoscopia",
+        default=["bom estado geral", "ativo e reativo", "hidratado", "corado", "acianótico", "anicterico", "eupneico"],
+    )
+    geral_obs = st.text_area("Descrição geral", value="Criança em bom estado geral, ativa e reativa, hidratada, corada, acianótica, anictérica e eupneica ao exame.", height=70)
+
+    pele_dict = {}
+    with st.expander("Pele e fâneros", expanded=False):
+        pele = selecionar_opcoes("Achados de pele/fâneros", EXAME_PELE_FANEROS, key="pele_faneros")
+        pele_obs = st.text_area("Descrição — pele e fâneros", value="Pele íntegra, sem lesões elementares relevantes, sem petéquias/equimoses, fâneros sem alterações aparentes.", height=70)
+        pele_dict = {"achados": pele, "obs": pele_obs}
+
     pesco = {}
     with st.expander("Cabeça e pescoço", expanded=False):
-        cc = st.columns(2)
-        for i,(sec, ops) in enumerate(CABECA_PESCOCO.items()):
-            with cc[i%2]: pesco[sec] = st.multiselect(sec, ops, key=f"cab_{sec}")
+        st.markdown("#### Fontanelas")
+        f1, f2 = st.columns(2)
+        with f1:
+            font_ant_status = st.selectbox("Fontanela anterior", ["aberta normotensa", "fechada", "abaulada", "deprimida", "fechamento precoce suspeito"], key="font_ant", format_func=titulo_opcao)
+            font_ant_tam = st.number_input("Abertura FA — maior diâmetro (cm)", 0.0, 10.0, 0.0, step=0.1, key="font_ant_tam")
+        with f2:
+            font_post_status = st.selectbox("Fontanela posterior", ["fechada", "aberta normotensa", "abaulada", "deprimida"], key="font_post", format_func=titulo_opcao)
+            font_post_tam = st.number_input("Abertura FP — maior diâmetro (cm)", 0.0, 5.0, 0.0, step=0.1, key="font_post_tam")
+        if "aberta" in font_ant_status and idade_meses_cron > 18:
+            st.warning("Fontanela anterior aberta após ~18 meses: correlacionar com crescimento craniano, exame físico e contexto clínico.")
+        if "aberta" in font_post_status and idade_meses_cron > 3:
+            st.warning("Fontanela posterior aberta após ~2–3 meses: avaliar contexto clínico e desenvolvimento craniano.")
+        font_obs = st.text_area("Descrição — fontanelas", value="Fontanela anterior normotensa quando aberta; fontanela posterior fechada ou sem alterações para a idade.", height=60)
+        pesco["Fontanelas"] = {"anterior": font_ant_status, "tamanho_anterior_cm": font_ant_tam, "posterior": font_post_status, "tamanho_posterior_cm": font_post_tam, "obs": font_obs}
+
+        st.markdown("#### Crânio")
+        cranio = selecionar_opcoes("Formato/achados cranianos", CABECA_PESCOCO.get("Crânio", []), key="cranio")
+        cranio_obs = st.text_area("Descrição — crânio", value="Crânio normocéfalo, sem deformidades aparentes relevantes.", height=60)
+        pesco["Crânio"] = {"achados": cranio, "obs": cranio_obs}
+
+        st.markdown("#### Linfonodos")
+        regioes_linfo = ["Occipital", "Pré-auricular", "Retroauricular", "Submandibular", "Submentoniana", "Cervical anterior", "Cervical posterior", "Supraclavicular", "Infraclavicular", "Axilar", "Epitroclear"]
+        with popover_ou_expander("📍 Localizações anatômicas dos linfonodos", expanded=False):
+            st.caption("Mapa anatômico de apoio. A seleção que entra no relatório é feita nos campos abaixo. Para clique direto em modelo 3D real, é necessário componente customizado com modelo .glb/.gltf.")
+            render_linfo_3d()
+            linfo_loc = selecionar_opcoes("Cadeias acometidas", regioes_linfo, key="linfo_loc", cols=3, compacto=False)
+        lc1, lc2, lc3 = st.columns(3)
+        with lc1:
+            linfo_qtd = st.number_input("Quantidade aproximada", 0, 50, 0, step=1, key="linfo_qtd")
+        with lc2:
+            linfo_tam = st.number_input("Maior tamanho (cm)", 0.0, 10.0, 0.0, step=0.1, key="linfo_tam")
+        with lc3:
+            linfo_lado = st.selectbox("Lateralidade", ["não se aplica", "direita", "esquerda", "bilateral"], key="linfo_lado", format_func=titulo_opcao)
+        linfo_carac = selecionar_opcoes("Características", ["amolecido", "endurecido", "móvel", "fixo", "único", "múltiplos", "coalescente", "doloroso", "indolor", "com sinais flogísticos", "sem sinais flogísticos"], key="linfo_carac", cols=3)
+        linfo_obs = st.text_area("Descrição — linfonodos", value="Sem linfonodomegalias palpáveis clinicamente relevantes.", height=60)
+        pesco["Linfonodos"] = {"localizacoes": linfo_loc, "quantidade": linfo_qtd, "maior_tamanho_cm": linfo_tam, "lateralidade": linfo_lado, "caracteristicas": linfo_carac, "obs": linfo_obs}
+
+        st.markdown("#### Oftalmoscopia / olhos")
+        olhos = {}
+        oc1, oc2 = st.columns(2)
+        with oc1:
+            olhos["reflexo_vermelho"] = st.selectbox("Reflexo vermelho", ["presente e simétrico bilateralmente", "alterado", "assimétrico", "não avaliado"], key="olho_reflexo", format_func=titulo_opcao)
+            olhos["conjuntivas"] = st.selectbox("Conjuntivas", ["coradas", "hipocoradas", "hiperemiadas", "ictéricas"], key="olho_conj", format_func=titulo_opcao)
+            olhos["pupilas"] = st.selectbox("Pupilas", ["isocóricas e fotorreagentes", "anisocoria", "fotorreação alterada", "não avaliado"], key="olho_pup", format_func=titulo_opcao)
+        with oc2:
+            olhos["motricidade_ocular"] = st.selectbox("Motricidade ocular/alinhamento", ["sem alterações aparentes", "estrabismo suspeito", "nistagmo", "alteração de seguimento visual"], key="olho_mot", format_func=titulo_opcao)
+            olhos["secrecao"] = st.selectbox("Secreção/lacrimejamento", ["ausente", "secreção ocular", "lacrimejamento", "fotofobia"], key="olho_sec", format_func=titulo_opcao)
+            olhos["fundoscopia"] = st.text_input("Fundoscopia/observação", value="Sem alterações aparentes quando avaliado.", key="olho_fundo")
+        pesco["Oftalmoscopia/olhos"] = olhos
+
+        st.markdown("#### Rinoscopia")
+        rino = {}
+        rc1, rc2 = st.columns(2)
+        with rc1:
+            rino["nariz"] = st.selectbox("Nariz", ["sem deformidades", "obstrução nasal", "batimento de asa nasal", "lesão externa"], key="rino_nariz", format_func=titulo_opcao)
+            rino["septo"] = st.selectbox("Septo nasal", ["centralizado", "desvio septal suspeito", "lesão/crosta", "não avaliado"], key="rino_septo", format_func=titulo_opcao)
+        with rc2:
+            rino["cornetos"] = st.selectbox("Cornetos/mucosa", ["sem edema relevante", "edemaciados", "pálidos", "hiperemiados"], key="rino_cornetos", format_func=titulo_opcao)
+            rino["muco"] = st.selectbox("Muco/secreção", ["ausente", "hialino", "purulento", "sanguinolento"], key="rino_muco", format_func=titulo_opcao)
+        rino["obs"] = st.text_area("Descrição — rinoscopia", value="Rinoscopia anterior sem alterações relevantes; sem secreção patológica evidente.", height=60)
+        pesco["Rinoscopia"] = rino
+
+        st.markdown("#### Oroscopia")
+        oro = {}
+        denticoes = ["não se aplica/sem dentes", "decídua", "mista", "permanente"]
+        o1, o2 = st.columns(2)
+        with o1:
+            oro["lábios"] = st.text_input("Lábios", value="Íntegros, sem lesões.")
+            oro["mucosa_jugal"] = st.text_input("Mucosa jugal", value="Úmida, corada, sem lesões.")
+            oro["denticao"] = st.selectbox("Dentição", denticoes, key="denticao", format_func=titulo_opcao)
+            oro["palato"] = st.text_input("Palato", value="Íntegro, sem alterações aparentes.")
+        with o2:
+            oro["língua"] = st.text_input("Língua", value="Sem alterações aparentes.")
+            oro["tonsilas_amigdalas"] = st.text_input("Tonsilas/amígdalas", value="Sem hipertrofia importante, sem exsudato.")
+            oro["orofaringe"] = st.text_input("Orofaringe", value="Sem hiperemia ou exsudato.")
+        with popover_ou_expander("🦷 Mapa dental estruturado", expanded=False):
+            st.caption("Odontograma visual de apoio. A seleção que entra no relatório é feita nos campos abaixo. Clique direto em 3D real exige componente customizado com modelo .glb/.gltf.")
+            render_dental_3d(oro["denticao"])
+            dentes_deciduos = ["55", "54", "53", "52", "51", "61", "62", "63", "64", "65", "85", "84", "83", "82", "81", "71", "72", "73", "74", "75"]
+            dentes_perm = ["18", "17", "16", "15", "14", "13", "12", "11", "21", "22", "23", "24", "25", "26", "27", "28", "48", "47", "46", "45", "44", "43", "42", "41", "31", "32", "33", "34", "35", "36", "37", "38"]
+            dentes_lista = dentes_deciduos if oro["denticao"] == "decídua" else (dentes_deciduos + dentes_perm if oro["denticao"] == "mista" else dentes_perm)
+            dentes_alt = selecionar_opcoes("Dentes com alteração", dentes_lista, key="dentes_alt", cols=5, compacto=False)
+            alteracoes_dent = selecionar_opcoes("Tipo de alteração dental", ["cárie", "fratura", "sangramento gengival", "mobilidade", "mancha", "ausência", "dor", "má oclusão"], key="alt_dental", cols=3, compacto=False)
+            oro["dentes_alterados"] = dentes_alt
+            oro["alteracoes_dentarias"] = alteracoes_dent
+        pesco["Oroscopia"] = oro
+
+        st.markdown("#### Otoscopia")
+        oto = {}
+        ot1, ot2 = st.columns(2)
+        with ot1:
+            oto["pavilhao_direito"] = st.selectbox("Pavilhão auricular direito", ["sem alterações", "malformação", "dor à mobilização", "lesão"], key="oto_pd", format_func=titulo_opcao)
+            oto["meato_direito"] = st.selectbox("Meato/canal direito", ["pérvio", "cerume", "edema", "otorreia", "corpo estranho"], key="oto_md", format_func=titulo_opcao)
+            oto["mt_direita"] = st.selectbox("Membrana timpânica direita", ["íntegra e translúcida", "hiperemiada", "opaca", "abaulada", "perfurada", "não visualizada"], key="oto_mtd", format_func=titulo_opcao)
+        with ot2:
+            oto["pavilhao_esquerdo"] = st.selectbox("Pavilhão auricular esquerdo", ["sem alterações", "malformação", "dor à mobilização", "lesão"], key="oto_pe", format_func=titulo_opcao)
+            oto["meato_esquerdo"] = st.selectbox("Meato/canal esquerdo", ["pérvio", "cerume", "edema", "otorreia", "corpo estranho"], key="oto_me", format_func=titulo_opcao)
+            oto["mt_esquerda"] = st.selectbox("Membrana timpânica esquerda", ["íntegra e translúcida", "hiperemiada", "opaca", "abaulada", "perfurada", "não visualizada"], key="oto_mte", format_func=titulo_opcao)
+        oto["obs"] = st.text_area("Descrição — otoscopia", value="Pavilhões auriculares sem alterações; condutos auditivos pérvios; membranas timpânicas íntegras, translúcidas e sem abaulamento quando visualizadas.", height=60)
+        pesco["Otoscopia"] = oto
+
     resp = {}; cardio = {}; abd = {}
     with st.expander("Respiratório", expanded=False):
         cols = st.columns(2)
-        for i,(sec, ops) in enumerate(EXAME_RESPIRATORIO.items()):
-            with cols[i%2]: resp[sec] = st.multiselect(sec, ops, key=f"resp_{sec}")
+        for i, (sec, ops) in enumerate(EXAME_RESPIRATORIO.items()):
+            with cols[i % 2]:
+                resp[sec] = selecionar_opcoes(sec, ops, key=f"resp_{sec}")
+        resp["descrição"] = st.text_area("Descrição respiratória", value="Tórax sem deformidades, expansibilidade preservada, som claro pulmonar e murmúrio vesicular presente bilateralmente, sem ruídos adventícios.", height=70)
     with st.expander("Cardiovascular", expanded=False):
-        for sec, ops in EXAME_CARDIO.items(): cardio[sec] = st.multiselect(sec, ops, key=f"cardio_{sec}")
+        for sec, ops in EXAME_CARDIO.items():
+            cardio[sec] = selecionar_opcoes(sec, ops, key=f"cardio_{sec}")
+        cardio["descrição"] = st.text_area("Descrição cardiovascular", value="Ritmo cardíaco regular em dois tempos, bulhas normofonéticas, sem sopros audíveis; pulsos periféricos palpáveis e perfusão adequada.", height=70)
     with st.expander("Abdominal", expanded=False):
         cols = st.columns(2)
-        for i,(sec, ops) in enumerate(EXAME_ABDOMINAL.items()):
-            with cols[i%2]: abd[sec] = st.multiselect(sec, ops, key=f"abd_{sec}")
+        for i, (sec, ops) in enumerate(EXAME_ABDOMINAL.items()):
+            with cols[i % 2]:
+                abd[sec] = selecionar_opcoes(sec, ops, key=f"abd_{sec}")
+        abd["descrição"] = st.text_area("Descrição abdominal", value="Abdome plano ou globoso conforme biotipo, flácido, indolor à palpação, sem visceromegalias ou massas palpáveis; ruídos hidroaéreos presentes.", height=70)
     with st.expander("Genitália", expanded=False):
-        genitalia = st.multiselect("Achados de genitália", EXAME_GENITALIA)
-        genitalia_obs = st.text_input("Observações — genitália")
+        gc1, gc2, gc3 = st.columns(3)
+        with gc1:
+            gen_tipo = st.selectbox("Caracterização", ["típica feminina", "típica masculina", "atípica/ambígua", "não avaliada"], key="gen_tipo", format_func=titulo_opcao)
+        with gc2:
+            gen_pelos = st.selectbox("Pilificação pubiana", ["ausente", "presente", "não avaliada"], key="gen_pelos", format_func=titulo_opcao)
+        with gc3:
+            tanner = st.selectbox("Tanner", ["G1/P1", "G2/P2", "G3/P3", "G4/P4", "G5/P5", "M1/P1", "M2/P2", "M3/P3", "M4/P4", "M5/P5", "não se aplica/não avaliado"], key="tanner")
+        genitalia = selecionar_opcoes("Achados de genitália", EXAME_GENITALIA, key="genitalia")
+        genitalia_obs = st.text_area("Descrição — genitália", value="Genitália externa típica para sexo informado, sem lesões, secreções ou sinais inflamatórios aparentes; pilificação compatível com idade quando aplicável.", height=70)
     with st.expander("Osteomuscular / extremidades", expanded=False):
-        osteo = st.multiselect("Achados osteomusculares/extremidades", EXAME_OSTEOMUSCULAR)
-        osteo_obs = st.text_input("Observações — osteomuscular")
+        axial = selecionar_opcoes("Esqueleto axial / coluna", ["sem desvios aparentes", "cifose", "lordose acentuada", "escoliose suspeita", "dor à palpação", "limitação de mobilidade"], key="osteo_axial")
+        apendicular = selecionar_opcoes("Esqueleto apendicular / membros", EXAME_OSTEOMUSCULAR, key="osteo_apendicular")
+        osteo = {"axial": axial, "apendicular": apendicular}
+        osteo_obs = st.text_area("Descrição — osteomuscular", value="Coluna sem desvios aparentes; membros sem deformidades, assimetrias ou limitação de mobilidade; marcha compatível com a idade quando aplicável.", height=70)
     with st.expander("Neurológico e reflexos", expanded=False):
-        neuro = st.multiselect("Achados neurológicos", EXAME_NEUROLOGICO)
-        reflexos = st.multiselect("Reflexos primitivos — RN/lactente", REFLEXOS_PRIMITIVOS)
-        neuro_obs = st.text_input("Observações — neurológico/reflexos")
-    with st.expander("Pele e fâneros", expanded=False):
-        pele = st.multiselect("Achados de pele/fâneros", EXAME_PELE_FANEROS)
-        pele_obs = st.text_input("Observações — pele/fâneros")
-
+        sentidos = selecionar_opcoes("Sentidos / responsividade sensorial", ["visão aparentemente preservada", "audição aparentemente preservada", "responde a estímulos sonoros", "fixa e acompanha objetos", "alteração visual suspeita", "alteração auditiva suspeita"], key="neuro_sentidos")
+        marcha = st.selectbox("Marcha", ["não se aplica pela idade", "adequada para idade", "alterada", "claudicante", "atáxica", "não avaliada"], key="neuro_marcha", format_func=titulo_opcao)
+        neuro = selecionar_opcoes("Achados neurológicos", EXAME_NEUROLOGICO, key="neuro")
+        reflexos = selecionar_opcoes("Reflexos primitivos — RN/lactente", REFLEXOS_PRIMITIVOS, key="reflexos", cols=1)
+        marcos_auto = st.session_state.get("passagem_desenvolvimento", {}).get("marcos_presentes", [])
+        st.caption("Marcos do desenvolvimento assinalados na aba Desenvolvimento serão incorporados automaticamente à passagem.")
+        neuro_obs = st.text_area("Descrição — neurológico/reflexos", value="Criança alerta e interativa, tônus e força globalmente preservados, sem assimetrias motoras evidentes; reflexos e marcha compatíveis com idade quando aplicável.", height=70)
     st.markdown("### Exames complementares")
     n_exames = st.number_input("Número de exames complementares", 0, 12, 0, step=1)
     exames_comp = []
@@ -649,10 +1035,10 @@ with tabs[0]:
         "medicamentos_gestacao": meds_gest, "suplementacoes_gestacao": sups_gest, "vacinacao_gestacao": {"selecionadas": vac_gest, "obs": vac_gest_obs},
         "antecedentes_perinatais": {"selecionados": ant_peri, "detalhes": peri_det}, "triagens_neonatais": triagens,
         "antecedentes_patologicos": {"selecionados": ant_pat, "detalhes": det_pat, "medicamentos_previos": meds_pat}, "antecedentes_familiares": ant_fam,
-        "habitos": {"alimentacao_atual": alimentacao, "historico_ame": historico_ame, "substituto_lacteo_precoce": lacteo_precoce, "formula": formula, "sono": sono, "telas": telas, "fezes": fezes, "bristol": bristol, "urina": urina, "desfralde": desfralde, "atividade": atividade},
+        "habitos": {"alimentacao_atual": alimentacao, "historico_ame": historico_ame, "substituto_lacteo_precoce": lacteo_precoce, "formula": formula, "sono": sono, "telas": telas, "fezes": fezes, "frequencia_fezes": freq_fezes, "bristol": bristol, "urina": urina, "frequencia_urina": freq_urina, "desfralde": desfralde, "atividade": atividade},
         "socioeconomico": {"moradia": socio, "tipo_casa": tipo_casa, "comodos": comodos, "moradores": moradores, "animais": animais, "coabitantes": coabit},
     }
-    exame_dados = {"sinais_vitais": f"T {temp:.1f}°C; FC {fc} bpm; FR {fr} irpm; SpO₂ {spo2}%; PA {pa or 'não aferida'}", "antropometria": f"Peso {peso:.1f} kg; estatura {estatura:.1f} cm; PC {pc:.1f} cm; IMC {imc:.1f}", "geral": geral, "cabeca_pescoco": pesco, "respiratorio": resp, "cardiovascular": cardio, "abdominal": abd, "genitalia": {"achados": genitalia, "obs": genitalia_obs}, "osteomuscular": {"achados": osteo, "obs": osteo_obs}, "neurologico": {"achados": neuro, "reflexos": reflexos, "obs": neuro_obs}, "pele_faneros": {"achados": pele, "obs": pele_obs}, "exames_complementares": exames_comp}
+    exame_dados = {"sinais_vitais": f"T {temp:.1f}°C; FC {fc} bpm; FR {fr} irpm; SpO₂ {spo2}%; PA {pa or 'não aferida'}", "antropometria": f"Peso {peso:.1f} kg; estatura {estatura:.1f} cm; PC {pc:.1f} cm; IMC {imc:.1f}", "geral": {"achados": geral, "obs": geral_obs}, "pele_faneros": pele_dict, "cabeca_pescoco": pesco, "respiratorio": resp, "cardiovascular": cardio, "abdominal": abd, "genitalia": {"caracterizacao": gen_tipo, "pilificacao": gen_pelos, "tanner": tanner, "achados": genitalia, "obs": genitalia_obs}, "osteomuscular": {"achados": osteo, "obs": osteo_obs}, "neurologico": {"sentidos": sentidos, "marcha": marcha, "achados": neuro, "reflexos": reflexos, "marcos_auto": marcos_auto, "obs": neuro_obs}, "exames_complementares": exames_comp}
     st.session_state["passagem_consulta"] = consulta_dados
     st.session_state["passagem_exame"] = exame_dados
 
@@ -690,7 +1076,7 @@ with tabs[2]:
         cols=st.columns([1.2,3,2]); cols[0].markdown(f"**{area}**"); cols[1].write(marco)
         stt=cols[2].radio("Status", ["Presente","Ausente","Não verificado"], horizontal=True, key=f"atu_{area}_{marco}", label_visibility="collapsed")
         status_atual.append(stt); (presentes if stt=="Presente" else pendentes).append(f"{area}: {marco} ({stt})")
-    fatores_dev = st.multiselect("Fatores de risco para desenvolvimento", ["Prematuridade", "Baixo peso ao nascer", "Internação neonatal prolongada", "Asfixia/hipóxia", "Infecção congênita", "Alteração auditiva/visual", "Vulnerabilidade social", "Suspeita de TEA ou regressão"], default=["Prematuridade"] if prematuro else [])
+    fatores_dev = selecionar_opcoes("Fatores de risco para desenvolvimento", ["Prematuridade", "Baixo peso ao nascer", "Internação neonatal prolongada", "Asfixia/hipóxia", "Infecção congênita", "Alteração auditiva/visual", "Vulnerabilidade social", "Suspeita de TEA ou regressão"], key="fatores_dev", default=["Prematuridade"] if prematuro else [])
     clas_dev, texto_dev, cor_dev = classificar_desenvolvimento(status_atual, status_anterior, fatores_dev)
     st.markdown(f"<div class='result-card' style='--result-color:{cor_dev};'><div><span class='result-label'>Síntese</span><h3>{clas_dev}</h3></div><div class='result-metrics'>{texto_dev}</div></div>", unsafe_allow_html=True)
     c1,c2=st.columns(2)
@@ -710,12 +1096,12 @@ with tabs[4]:
     st.subheader("💊 Ferro profilático e vitaminas")
     riscos = fatores_risco_anemia()
     c1,c2=st.columns(2)
-    with c1: fat_maternos = st.multiselect("Fatores maternos/gestacionais para anemia", riscos["maternos_gestacionais"])
+    with c1: fat_maternos = selecionar_opcoes("Fatores maternos/gestacionais para anemia", riscos["maternos_gestacionais"], key="fat_maternos_anemia")
     with c2:
         defaults=[]
         if prematuro: defaults.append("Prematuridade")
         if peso_nasc_g < 2500: defaults.append("Baixo peso ao nascer (< 2.500 g)")
-        fat_crianca_sel = st.multiselect("Fatores da criança para anemia", riscos["crianca"], default=defaults)
+        fat_crianca_sel = selecionar_opcoes("Fatores da criança para anemia", riscos["crianca"], key="fat_crianca_anemia", default=defaults)
     fat_crianca = list(dict.fromkeys(list(fat_crianca_sel) + fatores_alimentares_anemia_auto))
     if fatores_alimentares_anemia_auto:
         st.warning("Fator alimentar acrescentado automaticamente à análise de anemia/ferro: " + "; ".join(fatores_alimentares_anemia_auto))
@@ -733,9 +1119,9 @@ with tabs[4]:
     vit_a=calcular_vitamina_a_pnsva(idade_meses_float, regiao_va, cad_va, dsei_va)
     st.markdown(f"<div class='soft-card'><div class='soft-title'>Vitamina A</div><b>{'Indicada' if vit_a['indicada'] else 'Conferir critérios/não automática'}</b><p>Dose: {vit_a['dose']} · {vit_a.get('cor_capsula','—')} · {vit_a['frequencia']}</p><p>{vit_a['orientacao']}</p><p class='small-muted'>{vit_a['alerta']}</p></div>", unsafe_allow_html=True)
     st.markdown("### Vitamina D e B12")
-    fat_d=st.multiselect("Fatores de risco para hipovitaminose D", fatores_risco_hipovitaminose_d(), default=["Prematuridade"] if prematuro else [])
+    fat_d=selecionar_opcoes("Fatores de risco para hipovitaminose D", fatores_risco_hipovitaminose_d(), key="fat_vitd", default=["Prematuridade"] if prematuro else [])
     vit_d=calcular_vitamina_d_sbp(idade_meses_float, peso, prematuro, peso_nasc_g, fat_d)
-    fat_b12=st.multiselect("Fatores de risco para deficiência de B12", fatores_risco_vitamina_b12())
+    fat_b12=selecionar_opcoes("Fatores de risco para deficiência de B12", fatores_risco_vitamina_b12(), key="fat_b12")
     st.markdown(f"<div class='soft-card'><div class='soft-title'>Vitamina D</div><p><b>Dose:</b> {vit_d['dose']}</p><p>{vit_d['orientacao']}</p><div class='prescricao'>{vit_d['prescricao']}</div></div>", unsafe_allow_html=True)
     st.session_state["passagem_suplementacao"] = {"resumo": [f"Ferro: {rec['protocolo']} — {rec['resumo']} — {rec['dose_mg_dia']:.1f} mg/dia", f"Vitamina A: {vit_a['dose']} — {'indicada' if vit_a['indicada'] else 'conferir critérios'}", f"Vitamina D: {vit_d['dose']}", f"B12: {'risco presente' if fat_b12 else 'sem fatores de risco selecionados'}"], "fatores_risco": {"anemia_crianca": fat_crianca, "anemia_maternos": fat_maternos, "vitamina_d": fat_d, "b12": fat_b12}, "historico_ame": historico_ame, "substituto_lacteo_precoce": lacteo_precoce}
 
@@ -748,7 +1134,7 @@ with tabs[5]:
             cid=campo.get("id"); label=campo.get("label", cid); tipo=campo.get("tipo", "text"); ops=campo.get("opcoes", [])
             if tipo == "checkbox": respostas[cid] = st.checkbox(label, key=f"proto_{nome}_{cid}")
             elif tipo == "select": respostas[cid] = st.selectbox(label, ops, key=f"proto_{nome}_{cid}")
-            elif tipo == "multiselect": respostas[cid] = st.multiselect(label, ops, key=f"proto_{nome}_{cid}")
+            elif tipo == "multiselect": respostas[cid] = selecionar_opcoes(label, ops, key=f"proto_{nome}_{cid}")
             elif tipo == "number": respostas[cid] = st.number_input(label, value=campo.get("value",0), key=f"proto_{nome}_{cid}")
             else: respostas[cid] = st.text_input(label, key=f"proto_{nome}_{cid}")
         res = executar_protocolo(nome, respostas, {"idade_meses":idade_meses_float,"peso":peso})
@@ -764,6 +1150,21 @@ with tabs[6]:
     st.subheader("📝 Orientações por idade e achados")
     for bloco in obter_orientacoes_detalhadas(idade_meses_float, prematuro):
         st.markdown(f"<div class='soft-card'><div class='soft-title'>{bloco['icone']} {bloco['titulo']}</div>{html_lista(bloco['itens'])}<p class='small-muted'><b>Conduta/orientação:</b> {bloco['conduta']}</p></div>", unsafe_allow_html=True)
+
+with tabs[7]:
+    st.subheader("🗺️ Mapas clínicos clicáveis")
+    st.caption("Use estes mapas como apoio para registrar linfonodos e alterações dentárias. As seleções entram na passagem de caso.")
+    if selecionar_linfodos_por_imagem is None or selecionar_odontograma_por_imagem is None:
+        st.warning("Mapas interativos indisponíveis. Envie o arquivo mapas_interativos.py e adicione streamlit-image-coordinates e Pillow ao requirements.txt.")
+    else:
+        m1, m2 = st.tabs(["Linfonodos", "Odontograma"])
+        with m1:
+            tipo_mapa_linfodo = st.radio("Mapa anatômico", ["bebê", "criança"], horizontal=True, key="tipo_mapa_linfodo_global")
+            linfonodos_mapa = selecionar_linfodos_por_imagem(tipo_mapa_linfodo)
+            st.session_state["linfonodos_localizacao_mapa"] = linfonodos_mapa
+        with m2:
+            dentes_mapa = selecionar_odontograma_por_imagem()
+            st.session_state["odontograma_alteracoes_mapa"] = dentes_mapa
 
 # Plano sugestivo básico para passagem
 plano = []
