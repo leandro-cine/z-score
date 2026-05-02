@@ -186,7 +186,7 @@ def selecionar_opcoes(label, opcoes, key, default=None, cols=2, help=None, compa
         f"<div class='compact-select-summary modern-select-card'><div class='modern-select-label'>{label}</div><div class='modern-select-value'>{escape_html(resumo)}</div></div>",
         unsafe_allow_html=True,
     )
-    with popover_ou_expander(f"🔎 Selecionar / editar — {label}", expanded=False):
+    with popover_ou_expander(f"{label}", expanded=False):
         selecionados = _render_checkboxes_inline("Opções mais comuns", opcoes, key, default=default, cols=cols, help=help)
         if permitir_outros:
             st.markdown("**Outra alteração não listada**")
@@ -302,6 +302,27 @@ def render_dental_3d(denticao: str):
         .lower .tooth{{border-radius:35% 35% 45% 45%}}
         .label{{text-align:center;font-size:12px;font-weight:800;color:#7f1d1d;margin:4px}}
   
+
+
+    /* ===== MENU LATERAL PRINCIPAL PEC ===== */
+    section[data-testid="stSidebar"] { min-width:290px!important; }
+    section[data-testid="stSidebar"] div[role="radiogroup"] label {
+        border:1px solid var(--pec-line, var(--border));
+        border-radius:16px;
+        padding:.75rem .65rem;
+        margin:.45rem 0;
+        background:var(--pec-panel, var(--card));
+        box-shadow:0 3px 10px rgba(15,23,42,.05);
+        font-weight:900;
+        font-size:1.03rem;
+    }
+    section[data-testid="stSidebar"] div[role="radiogroup"] label:has(input:checked) {
+        background:var(--pec-soft, var(--chip));
+        border-color:var(--pec-green, var(--accent));
+        color:var(--pec-green, var(--accent))!important;
+    }
+    .fixed-id-header { position:sticky; top:3.15rem; z-index:998; padding:.75rem .9rem; border-radius:14px; border:1px solid var(--pec-line, var(--border)); background:var(--pec-panel, var(--card)); box-shadow:0 6px 18px rgba(15,23,42,.08); margin-bottom:.9rem; }
+    .fixed-id-header b { color:var(--pec-green, var(--accent))!important; }
 
     </style>
       <div class='label'>Odontograma visual — {denticao.title()}</div>
@@ -503,6 +524,27 @@ def css(sexo: str):
     .pec-problem-card h4 {{ margin:.1rem 0 .35rem; color:var(--pec-green, var(--accent))!important; }}
     .pec-map-node {{ display:inline-block; padding:.32rem .55rem; margin:.18rem; border-radius:999px; border:1px solid var(--pec-line, var(--border)); background:var(--pec-soft, var(--chip)); color:var(--text)!important; font-size:.85rem; }}
     @media (max-width: 760px) {{ .pec-axis-ribbon {{ grid-template-columns:1fr; }} }}
+
+    /* ===== MENU LATERAL PRINCIPAL PEC ===== */
+    section[data-testid="stSidebar"] { min-width:290px!important; }
+    section[data-testid="stSidebar"] div[role="radiogroup"] label {
+        border:1px solid var(--pec-line, var(--border));
+        border-radius:16px;
+        padding:.75rem .65rem;
+        margin:.45rem 0;
+        background:var(--pec-panel, var(--card));
+        box-shadow:0 3px 10px rgba(15,23,42,.05);
+        font-weight:900;
+        font-size:1.03rem;
+    }
+    section[data-testid="stSidebar"] div[role="radiogroup"] label:has(input:checked) {
+        background:var(--pec-soft, var(--chip));
+        border-color:var(--pec-green, var(--accent));
+        color:var(--pec-green, var(--accent))!important;
+    }
+    .fixed-id-header { position:sticky; top:3.15rem; z-index:998; padding:.75rem .9rem; border-radius:14px; border:1px solid var(--pec-line, var(--border)); background:var(--pec-panel, var(--card)); box-shadow:0 6px 18px rgba(15,23,42,.08); margin-bottom:.9rem; }
+    .fixed-id-header b { color:var(--pec-green, var(--accent))!important; }
+
     </style>
     """
     return template.replace("__ACCENT__", accent)
@@ -666,6 +708,7 @@ tabelas = carregar_tabelas()
 
 # Valores centrais são inicializados antes da renderização dos eixos para permitir
 # cálculo de idade, crescimento e resumo fixo sem manter campos fora do prontuário.
+st.session_state.setdefault("nome_crianca", "")
 st.session_state.setdefault("sexo", "Masculino")
 st.session_state.setdefault("data_nasc", date(2023, 1, 1))
 st.session_state.setdefault("data_aval", date.today())
@@ -715,19 +758,18 @@ with st.sidebar:
     st.markdown("""
     <div class='pec-side-brand'>
       <div class='pec-side-logo'>SUS</div>
-      <div><b>Puericultura</b><br><small>Prontuário orientado por eixos</small></div>
+      <div><b>Puericultura Digital</b><br><small>Prontuário orientado por eixos</small></div>
     </div>
     """, unsafe_allow_html=True)
-    st.caption("Navegação rápida")
-    st.markdown("""
-    <div class='pec-sidebar-menu'>
-      <a href='#eixo-anamnese'>📝 <span>Anamnese</span></a>
-      <a href='#eixo-exame-fisico'>🩺 <span>Exame físico</span></a>
-      <a href='#eixo-diagnosticos'>🧩 <span>Diagnósticos</span></a>
-      <a href='#eixo-plano'>📋 <span>Plano terapêutico</span></a>
-    </div>
-    """, unsafe_allow_html=True)
+    st.caption("Menu principal")
+    eixo_atual = st.radio(
+        "Navegação",
+        ["📝 Anamnese", "🩺 Exame físico", "🧩 Diagnósticos", "📋 Plano terapêutico"],
+        key="eixo_atual",
+        label_visibility="collapsed",
+    )
     st.divider()
+    st.text_input("Nome da criança", key="nome_crianca", placeholder="Opcional")
     st.caption("Preencha os dados na ordem do atendimento. A passagem de caso usa tudo o que estiver preenchido.")
 
 idade_dias_cron = max(0, (data_aval - data_nasc).days)
@@ -772,8 +814,8 @@ st.session_state["passagem_crianca"] = {"sexo": sexo, "data_nascimento": fmt_dat
 st.session_state["passagem_nascimento"] = {"ig": f"{ig_sem}s {ig_dias}d", "classificacao_ig": class_ig, "peso_nascimento": f"{peso_nasc_g:.0f} g", "estatura_nascimento": f"{estatura_nasc_cm:.1f} cm" if estatura_nasc_cm else "não informado", "pc_nascimento": f"{pc_nasc_cm:.1f} cm" if pc_nasc_cm else "não informado", "apgar": f"1º min {apgar1}; 5º min {apgar5}", "classificacao": class_nasc, "riscos": riscos_nasc}
 
 st.markdown(f"""
-<div class='top-panel'><b>Resumo fixo da criança</b><br>
-<span class='metric-pill'>Sexo: {sexo}</span><span class='metric-pill'>Nascimento: {fmt_data(data_nasc)}</span><span class='metric-pill'>Consulta: {fmt_data(data_aval)}</span>
+<div class='top-panel fixed-id-header'><b>Identificação fixa</b><br>
+<span class='metric-pill'>Nome: {escape_html(st.session_state.get("nome_crianca") or "não informado")}</span><span class='metric-pill'>Sexo: {sexo}</span><span class='metric-pill'>Nascimento: {fmt_data(data_nasc)}</span><span class='metric-pill'>Consulta: {fmt_data(data_aval)}</span>
 <span class='metric-pill'>Idade cronológica: {idade_texto(idade_dias_cron)}</span><span class='metric-pill'>Idade corrigida: {idade_texto(idade_dias)}</span>
 <span class='metric-pill'>IG: {ig_sem}s {ig_dias}d · {class_ig}</span><span class='metric-pill'>PN: {peso_nasc_g:.0f}g · {class_nasc}</span><span class='metric-pill'>Apgar: {apgar1}/{apgar5}</span>
 <span class='metric-pill'>Atual: {peso:.1f}kg · {estatura:.1f}cm · PC {pc:.1f}cm · IMC {imc:.1f}</span></div>
@@ -797,597 +839,619 @@ faixa, rx = faixa_x_por_idade(idade_meses_float)
 
 # =========================
 # Navegação clínica estilo PEC/e-SUS APS
-# Eixos superiores + menu lateral de acesso rápido.
-# As seções antigas foram reorganizadas sem remover funcionalidades.
+# Menu lateral principal + abas superiores por subseção.
+# As funções anteriores são preservadas e apenas remapeadas para os eixos.
 # =========================
 st.markdown("""
 <div class='pec-workspace-title'>
   <div>
     <span class='pec-badge'>PEC SUS · Puericultura</span>
     <h2>Atendimento de puericultura</h2>
-    <p>Registro organizado por anamnese, exame físico, raciocínio diagnóstico e plano terapêutico.</p>
+    <p>Registro organizado por eixo clínico. As seções compartilham dados entre si para apoiar o raciocínio clínico estruturado.</p>
   </div>
 </div>
 """, unsafe_allow_html=True)
 
-# Abas superiores por eixo clínico.
-# As seções antigas são preservadas e anexadas ao eixo correspondente.
-eixo_tabs = st.tabs(["📝 Anamnese", "🩺 Exame físico", "🧩 Diagnósticos", "📋 Plano terapêutico"])
+_EIXO = st.session_state.get("eixo_atual", "📝 Anamnese")
 
-# Mapeamento funcional preservado:
-# 0 Anamnese | 1 Exame geral | 2 Crescimento | 3 Desenvolvimento | 4 Vacinação
-# 5 Ferro/vitaminas | 6 Ambulatório | 7 Orientações | 8 Mapas | 9 Diagnósticos | 10 Plano
-tabs = [
-    eixo_tabs[0],  # Anamnese: identificação, HDA, antecedentes, hábitos
-    eixo_tabs[1],  # Exame físico geral/segmentar
-    eixo_tabs[1],  # Crescimento
-    eixo_tabs[1],  # Desenvolvimento
-    eixo_tabs[0],  # Vacinação
-    eixo_tabs[0],  # Suplementação
-    eixo_tabs[2],  # Ambulatório / investigação guiada
-    eixo_tabs[3],  # Orientações
-    eixo_tabs[1],  # Mapas clínicos
-    eixo_tabs[2],  # Diagnósticos / lista de problemas
-    eixo_tabs[3],  # Plano terapêutico
-]
+_subtabs_por_eixo = {
+    "📝 Anamnese": ["Queixa principal, HDA e IS", "Antecedentes", "Hábitos de vida", "Condições socioeconômicas", "Vacinação"],
+    "🩺 Exame físico": ["Sinais vitais e antropometria", "Exame geral e segmentar", "Crescimento", "Desenvolvimento", "Mapas clínicos"],
+    "🧩 Diagnósticos": ["Lista de problemas", "Investigação", "Hipóteses e CID-11"],
+    "📋 Plano terapêutico": ["Orientações", "Prescrição médica", "Exames solicitados e indicações"],
+}
+_subtabs = st.tabs(_subtabs_por_eixo.get(_EIXO, _subtabs_por_eixo["📝 Anamnese"]))
 
-with tabs[0]:
-    st.markdown("<span id='eixo-anamnese'></span>", unsafe_allow_html=True)
-    st.subheader("📝 Anamnese estruturada")
+# Contextos reais de cada bloco existente, agora remapeados ao eixo/subseção desejado.
+# Blocos não pertencentes ao eixo selecionado não são executados.
+tabs = [None] * 11
+if _EIXO == "📝 Anamnese":
+    tabs[0] = _subtabs[0]   # Queixa/HDA/IS + antecedentes/hábitos já estruturados no bloco original
+    tabs[4] = _subtabs[4]   # Vacinação
+elif _EIXO == "🩺 Exame físico":
+    tabs[1] = _subtabs[1]   # Exame geral e segmentar
+    tabs[2] = _subtabs[2]   # Crescimento
+    tabs[3] = _subtabs[3]   # Desenvolvimento
+    tabs[8] = _subtabs[4]   # Mapas clínicos
+elif _EIXO == "🧩 Diagnósticos":
+    tabs[9] = _subtabs[0]   # Lista de problemas / mapa conceitual
+    tabs[6] = _subtabs[1]   # Investigação por protocolo ambulatorial
+elif _EIXO == "📋 Plano terapêutico":
+    tabs[7] = _subtabs[0]   # Orientações
+    tabs[5] = _subtabs[1]   # Suplementação/prescrição estruturada
+    tabs[10] = _subtabs[2]  # Plano geral + exames/seguimento
 
-    st.markdown("### Identificação do atendimento")
-    id1, id2, id3 = st.columns(3)
-    with id1:
-        sexo = st.selectbox("Sexo", ["Masculino", "Feminino"], key="sexo")
-    with id2:
-        data_nasc = st.date_input("Data de nascimento", key="data_nasc", format="DD/MM/YYYY")
-    with id3:
-        data_aval = st.date_input("Data da consulta", key="data_aval", format="DD/MM/YYYY")
+def _render_block(idx: int) -> bool:
+    return tabs[idx] is not None
 
-    st.markdown("### Antecedentes pessoais — nascimento")
-    nb1, nb2, nb3 = st.columns(3)
-    with nb1:
-        peso_nasc_g = st.number_input("Peso ao nascer (g)", 300, 6500, key="peso_nasc_g", step=10)
-    with nb2:
-        estatura_nasc_cm = st.number_input("Estatura ao nascer (cm)", 0.0, 70.0, key="estatura_nasc_cm", step=0.5)
-    with nb3:
-        pc_nasc_cm = st.number_input("PC ao nascer (cm)", 0.0, 50.0, key="pc_nasc_cm", step=0.1)
-    ni1, ni2, na1, na2 = st.columns([1, 1, 1, 1])
-    with ni1:
-        ig_sem = st.number_input("IG ao nascer — semanas", 22, 42, key="ig_sem", step=1)
-    with ni2:
-        ig_dias = st.number_input("IG ao nascer — dias", 0, 6, key="ig_dias", step=1)
-    with na1:
-        apgar1 = st.number_input("Apgar 1º minuto", 0, 10, key="apgar1", step=1)
-    with na2:
-        apgar5 = st.number_input("Apgar 5º minuto", 0, 10, key="apgar5", step=1)
-    st.caption("Dados ao nascer ficam registrados nos antecedentes pessoais e alimentam classificação de IG/peso, ferro profilático e idade corrigida.")
-
-    st.markdown("## Anamnese")
-    queixa = st.text_area("Queixa principal / História da doença atual", placeholder="Ex.: responsável refere tosse há 3 dias, febre...", height=120)
-
-    st.markdown("### Interrogatório sintomatológico segmentar")
-    inter = {}
-    cols = st.columns(2)
-    for i, (seg, ops) in enumerate(INTERROGATORIO_SEGMENTAR.items()):
-        with cols[i % 2]:
-            inter[seg] = selecionar_opcoes(seg, ops, key=f"is_{seg}")
-    inter_obs = st.text_area("Complemento do interrogatório sintomatológico", height=70)
-
-    meds = render_lista_medicamentos("meduso", "Medicamentos em uso / suplementações profiláticas", idade_texto(idade_dias), peso, maximo=10)
-
-    st.markdown("### Antecedentes maternos, gestacionais e obstétricos")
-    g1,g2,g3,g4 = st.columns(4)
-    with g1: gestas = st.number_input("Gestações (G)", 0, 20, 1, step=1)
-    with g2: partos_normais = st.number_input("Partos normais (PN)", 0, 20, 0, step=1)
-    with g3: partos_cesareos = st.number_input("Partos cesáreos (PC)", 0, 20, 0, step=1)
-    with g4: abortos = st.number_input("Abortos (A)", 0, 20, 0, step=1)
-    paridade = f"G{gestas} PN{partos_normais} PC{partos_cesareos} A{abortos}"
-
-    n_filhos = st.number_input("Número de filhos vivos", 0, 20, 0, step=1)
-    filhos = []
-    if n_filhos:
-        with st.expander("Filhos vivos — sexo e idade", expanded=False):
-            for i in range(int(n_filhos)):
-                fc1,fc2,fc3 = st.columns([1,1,2])
-                with fc1: sx_f = st.selectbox("Sexo", ["Masculino", "Feminino", "Outro/não informado"], key=f"filho_sx_{i}")
-                with fc2: idade_f = st.text_input("Idade", key=f"filho_idade_{i}", placeholder="Ex.: 7a; 3m")
-                with fc3: obs_f = st.text_input("Observação", key=f"filho_obs_{i}")
-                filhos.append({"sexo": sx_f, "idade": idade_f, "observacao": obs_f})
-
-    ant_mat_inf = selecionar_opcoes("Infecções/intercorrências infecciosas maternas", DOENCAS_MATERNAS_INFECCIOSAS, key="ant_mat_inf")
-    ant_mat_clin = selecionar_opcoes("Doenças/comorbidades/intercorrências clínicas/obstétricas maternas", DOENCAS_MATERNAS_CLINICAS, key="ant_mat_clin")
-    ant_mat_det = {}
-    for inf in ant_mat_inf:
-        with st.expander(f"Detalhes — {inf}", expanded=False):
-            d1,d2,d3 = st.columns(3)
-            with d1: trat = st.selectbox("Tratada adequadamente?", ["sim", "não", "parcial", "não sabe"], key=f"inf_trat_{inf}")
-            with d2: ctrl = st.selectbox("Controlada/resolvida?", ["sim", "não", "em acompanhamento", "não sabe"], key=f"inf_ctrl_{inf}")
-            with d3: reperc = st.selectbox("Repercussão fetal/neonatal?", ["não", "sim", "não sabe"], key=f"inf_rep_{inf}")
-            obs = st.text_input("Observação", key=f"inf_obs_{inf}")
-            ant_mat_det[inf] = {"tratada": trat, "controlada": ctrl, "repercussao": reperc, "observacao": obs}
-    for cond in ant_mat_clin:
-        with st.expander(f"Controle/observação — {cond}", expanded=False):
-            ctrl = st.selectbox("Controle durante a gestação", ["adequado", "parcial", "inadequado", "não sabe"], key=f"clin_ctrl_{cond}")
-            obs = st.text_input("Observação", key=f"clin_obs_{cond}")
-            ant_mat_det[cond] = {"controle": ctrl, "observacao": obs}
-
-    meds_gest = render_lista_medicamentos("medgest", "Medicamentos maternos usados na gestação", idade_texto(idade_dias), peso, maximo=8)
-    sups_gest = render_lista_medicamentos("supgest", "Suplementações maternas na gestação", idade_texto(idade_dias), peso, maximo=6)
-    vac_gest = selecionar_opcoes("Vacinação na gestação", VACINAS_GESTACAO, key="vac_gest")
-    vac_gest_obs = st.text_input("Observações sobre vacinação gestacional")
-
-    st.markdown("### Antecedentes perinatais e triagens neonatais")
-    ant_peri = selecionar_opcoes("Intercorrências perinatais/neonatais", INTERCORRENCIAS_PERINATAIS, key="ant_peri")
-    peri_det = {}
-    campos_peri = {
-        "internação neonatal": "Internação neonatal: motivo e duração",
-        "UTI neonatal": "UTI neonatal: motivo e duração",
-        "fototerapia": "Fototerapia: motivo/duração",
-        "antibiótico neonatal": "Antibiótico neonatal: qual/motivo/duração",
-        "reanimação neonatal": "Reanimação: passos necessários e resposta",
-        "desconforto respiratório": "Desconforto respiratório: suporte usado e duração",
-        "transfusão": "Transfusão: tipo/motivo",
-    }
-    for item, label in campos_peri.items():
-        if item in ant_peri:
-            peri_det[item] = st.text_input(label, key=f"peri_{item}")
-    triagens = {}
-    tcols = st.columns(3)
-    for i, (teste, ops) in enumerate(TRIAGENS_NEONATAIS.items()):
-        with tcols[i % 3]:
-            val = st.selectbox(teste, ops, key=f"triagem_{teste}")
-            triagens[teste] = val
-            if val not in ("normal", "não sabe informar"):
-                triagens[teste + " — detalhe"] = st.text_input(f"Detalhe: {teste}", key=f"triagem_det_{teste}")
-
-    st.markdown("### Antecedentes patológicos e familiares")
-    ant_pat = selecionar_opcoes("Antecedentes patológicos", ANTECEDENTES_PATOLOGICOS, key="ant_pat")
-    det_pat = {}
-    for item in ["internações", "cirurgias", "alergias medicamentosas", "alergias alimentares", "convulsões", "transfusões", "acidentes/intoxicações"]:
-        if item in ant_pat:
-            det_pat[item] = st.text_input(f"Detalhar {item}: motivo, data, duração/procedimento", key=f"det_{item}")
-    meds_pat = render_lista_medicamentos("medpat", "Medicamentos já utilizados para antecedentes patológicos", idade_texto(idade_dias), peso, maximo=8)
-    ant_fam = selecionar_opcoes("Antecedentes familiares", ANTECEDENTES_FAMILIARES, key="ant_fam")
-
-    st.markdown("### Hábitos de vida")
-    hab1,hab2 = st.columns(2)
-    with hab1:
-        alimentacao = selecionar_opcoes("Alimentação/aleitamento atual", TIPOS_ALEITAMENTO, key="alimentacao")
-        # Histórico de AME permanece relevante mesmo após a introdução alimentar,
-        # pois influencia a análise de ferro profilático e risco de anemia.
-        if idade_meses_cron >= 6:
-            historico_ame = st.selectbox("Histórico de AME até 6 meses", HISTORICO_AME[1:], help="Use para saber se a criança recebeu aleitamento materno exclusivo até 6 meses, mesmo que já esteja em alimentação complementar.")
-        else:
-            historico_ame = st.selectbox("Histórico/condição atual de AME", ["AME em curso", "não está em AME", "não sabe informar"], help="Em menores de 6 meses, indica se o aleitamento materno exclusivo está em curso.")
-        lacteo_precoce = ""
-        if historico_ame in ("AME interrompido antes de 6 meses", "não esteve em AME", "não está em AME"):
-            lacteo_precoce = st.selectbox("Principal substituto lácteo antes dos 6 meses", ALIMENTO_LACTEO_ANTES_6M[1:])
-        formula = ""
-        if "fórmula infantil exclusiva" in alimentacao or "aleitamento misto" in alimentacao:
-            formula = st.text_input("Fórmula atual: marca/tipo, volume, frequência, diluição")
-        sono = selecionar_opcoes("Sono", SONO, key="sono")
-        telas = selecionar_um("Telas", ["não usa", "uso ocasional", "< 1h/dia", "1–2h/dia", "> 2h/dia", "não informado"], key="telas")
-    with hab2:
-        fezes = selecionar_opcoes("Fezes — queixas/padrão", PADRAO_FEZES, key="fezes")
-        bristol = st.selectbox("Escala de Bristol", BRISTOL_FEZES, format_func=titulo_opcao)
-        freq_fezes = st.text_input("Frequência evacuatória", value="0", help="Ex.: 1x/dia, 3x/semana, 5x/dia")
-        urina = selecionar_opcoes("Micção/diurese", PADRAO_URINA, key="urina")
-        freq_urina = st.text_input("Frequência urinária/diurese", value="0", help="Ex.: 6 fraldas/dia, 5 micções/dia")
-        desfralde = selecionar_um("Desfralde/controle esfincteriano", ["não se aplica pela idade", "não iniciado", "em treinamento", "diurno adquirido", "diurno e noturno adquiridos", "regressão/perdas"], key="desfralde")
-        atividade = st.text_input("Atividade física/brincadeiras/creche/escola")
-    ame_adequado_para_ferro = (historico_ame in ("esteve em AME até 6 meses", "AME em curso"))
-    fatores_alimentares_anemia_auto = []
-    if lacteo_precoce in ("leite de vaca", "leite de cabra/outro leite animal", "misto com leite de vaca"):
-        fatores_alimentares_anemia_auto.append("leite animal antes de 6 meses/antes de 12 meses")
-    elif historico_ame in ("AME interrompido antes de 6 meses", "não esteve em AME", "não está em AME"):
-        fatores_alimentares_anemia_auto.append("AME ausente/interrompido antes de 6 meses — avaliar dieta/fórmula fortificada")
-
-    st.markdown("### Condições socioeconômicas")
-    socio = selecionar_opcoes("Condições socioeconômicas/moradia", CONDICOES_MORADIA, key="socio")
-    sc1,sc2,sc3 = st.columns(3)
-    with sc1: tipo_casa = st.selectbox("Tipo de moradia", ["não informado", "casa", "apartamento", "cômodo", "zona rural", "outro"])
-    with sc2: comodos = st.number_input("Número de cômodos", 0, 20, 0, step=1)
-    with sc3: moradores = st.number_input("Número de moradores", 0, 30, 0, step=1)
-    animais = st.text_input("Animais domésticos")
-    coabit = st.text_input("Coabitantes/cuidadores principais")
-
-
-with tabs[1]:
-    st.markdown("<span id='eixo-exame-fisico'></span>", unsafe_allow_html=True)
-    st.markdown("## Exame físico")
-
-    st.markdown("### Geral — sinais vitais e antropometria atual")
-    v1, v2, v3, v4, v5 = st.columns(5)
-    with v1:
-        temp = st.number_input("Temp. (°C)", 34.0, 42.0, key="temp", step=0.1)
-    with v2:
-        fc = st.number_input("FC (bpm)", 0, 240, key="fc", step=1)
-    with v3:
-        fr = st.number_input("FR (irpm)", 0, 100, key="fr", step=1)
-    with v4:
-        spo2 = st.number_input("SpO₂ (%)", 0, 100, key="spo2", step=1)
-    with v5:
-        pa = st.text_input("PA", key="pa")
-    a1, a2, a3, a4 = st.columns(4)
-    with a1:
-        peso = st.number_input("Peso atual (kg)", 0.5, 100.0, key="peso", step=0.1)
-    with a2:
-        estatura = st.number_input("Comprimento/estatura atual (cm)", 30.0, 170.0, key="estatura", step=0.5)
-    with a3:
-        pc = st.number_input("Perímetro cefálico atual (cm)", 20.0, 70.0, key="pc", step=0.1)
-    with a4:
-        st.metric("IMC calculado", f"{imc:.1f}")
-    st.caption("Sinais vitais e antropometria ficam no exame físico, como no fluxo de atendimento clínico.")
-    geral = selecionar_opcoes(
-        "Geral / ectoscopia",
-        ECTOSCOPIA,
-        key="geral_ectoscopia",
-        default=["bom estado geral", "ativo e reativo", "hidratado", "corado", "acianótico", "anicterico", "eupneico"],
-    )
-    geral_obs = st.text_area("Descrição geral", value="Criança em bom estado geral, ativa e reativa, hidratada, corada, acianótica, anictérica e eupneica ao exame.", height=70)
-
-    pele_dict = {}
-    with st.expander("Pele e fâneros", expanded=False):
-        pele = selecionar_opcoes("Achados de pele/fâneros", EXAME_PELE_FANEROS, key="pele_faneros")
-        pele_obs = st.text_area("Descrição — pele e fâneros", value="Pele íntegra, sem lesões elementares relevantes, sem petéquias/equimoses, fâneros sem alterações aparentes.", height=70)
-        pele_dict = {"achados": pele, "obs": pele_obs}
-
-    pesco = {}
-    with st.expander("Cabeça e pescoço", expanded=False):
-        st.markdown("#### Fontanelas")
-        f1, f2 = st.columns(2)
-        with f1:
-            font_ant_status = st.selectbox("Fontanela anterior", ["aberta normotensa", "fechada", "abaulada", "deprimida", "fechamento precoce suspeito"], key="font_ant", format_func=titulo_opcao)
-            font_ant_tam = st.number_input("Abertura FA — maior diâmetro (cm)", 0.0, 10.0, 0.0, step=0.1, key="font_ant_tam")
-        with f2:
-            font_post_status = st.selectbox("Fontanela posterior", ["fechada", "aberta normotensa", "abaulada", "deprimida"], key="font_post", format_func=titulo_opcao)
-            font_post_tam = st.number_input("Abertura FP — maior diâmetro (cm)", 0.0, 5.0, 0.0, step=0.1, key="font_post_tam")
-        if "aberta" in font_ant_status and idade_meses_cron > 18:
-            st.warning("Fontanela anterior aberta após ~18 meses: correlacionar com crescimento craniano, exame físico e contexto clínico.")
-        if "aberta" in font_post_status and idade_meses_cron > 3:
-            st.warning("Fontanela posterior aberta após ~2–3 meses: avaliar contexto clínico e desenvolvimento craniano.")
-        font_obs = st.text_area("Descrição — fontanelas", value="Fontanela anterior normotensa quando aberta; fontanela posterior fechada ou sem alterações para a idade.", height=60)
-        pesco["Fontanelas"] = {"anterior": font_ant_status, "tamanho_anterior_cm": font_ant_tam, "posterior": font_post_status, "tamanho_posterior_cm": font_post_tam, "obs": font_obs}
-
-        st.markdown("#### Crânio")
-        cranio = selecionar_opcoes("Formato/achados cranianos", CABECA_PESCOCO.get("Crânio", []), key="cranio")
-        cranio_obs = st.text_area("Descrição — crânio", value="Crânio normocéfalo, sem deformidades aparentes relevantes.", height=60)
-        pesco["Crânio"] = {"achados": cranio, "obs": cranio_obs}
-
-        st.markdown("#### Linfonodos")
-        regioes_linfo = ["Occipital", "Pré-auricular", "Retroauricular", "Submandibular", "Submentoniana", "Cervical anterior", "Cervical posterior", "Supraclavicular", "Infraclavicular", "Axilar", "Epitroclear"]
-        with popover_ou_expander("📍 Selecionar no mapa anatômico", expanded=False):
-            st.caption("Clique diretamente nas regiões da imagem anatômica. As áreas selecionadas entram automaticamente na passagem de caso.")
-            if selecionar_linfodos_por_imagem is not None:
-                tipo_mapa_linfodo_exame = st.radio(
-                    "Mapa anatômico", ["bebê", "criança"], horizontal=True, key="tipo_mapa_linfodo_exame"
-                )
-                linfo_loc_mapa = selecionar_linfodos_por_imagem(tipo_mapa_linfodo_exame, key_suffix="exame")
-                st.session_state["linfonodos_localizacao_mapa"] = linfo_loc_mapa
-            else:
-                st.warning("Mapa interativo indisponível. Envie mapas_interativos.py, assets/mapas e adicione streamlit-image-coordinates/Pillow ao requirements.txt.")
-                linfo_loc_mapa = []
-            linfo_loc_manual = selecionar_opcoes("Cadeias acometidas — seleção manual complementar", regioes_linfo, key="linfo_loc", cols=3, compacto=True)
-            linfo_loc = list(dict.fromkeys((linfo_loc_mapa or []) + (linfo_loc_manual or [])))
-        lc1, lc2, lc3 = st.columns(3)
-        with lc1:
-            linfo_qtd = st.number_input("Quantidade aproximada", 0, 50, 0, step=1, key="linfo_qtd")
-        with lc2:
-            linfo_tam = st.number_input("Maior tamanho (cm)", 0.0, 10.0, 0.0, step=0.1, key="linfo_tam")
-        with lc3:
-            linfo_lado = st.selectbox("Lateralidade", ["não se aplica", "direita", "esquerda", "bilateral"], key="linfo_lado", format_func=titulo_opcao)
-        linfo_carac = selecionar_opcoes("Características", ["amolecido", "endurecido", "móvel", "fixo", "único", "múltiplos", "coalescente", "doloroso", "indolor", "com sinais flogísticos", "sem sinais flogísticos"], key="linfo_carac", cols=3)
-        linfo_obs = st.text_area("Descrição — linfonodos", value="Sem linfonodomegalias palpáveis clinicamente relevantes.", height=60)
-        pesco["Linfonodos"] = {"localizacoes": linfo_loc, "quantidade": linfo_qtd, "maior_tamanho_cm": linfo_tam, "lateralidade": linfo_lado, "caracteristicas": linfo_carac, "obs": linfo_obs}
-
-        st.markdown("#### Oftalmoscopia / olhos")
-        olhos = {}
-        oc1, oc2 = st.columns(2)
-        with oc1:
-            olhos["reflexo_vermelho"] = st.selectbox("Reflexo vermelho", ["presente e simétrico bilateralmente", "alterado", "assimétrico", "não avaliado"], key="olho_reflexo", format_func=titulo_opcao)
-            olhos["conjuntivas"] = st.selectbox("Conjuntivas", ["coradas", "hipocoradas", "hiperemiadas", "ictéricas"], key="olho_conj", format_func=titulo_opcao)
-            olhos["pupilas"] = st.selectbox("Pupilas", ["isocóricas e fotorreagentes", "anisocoria", "fotorreação alterada", "não avaliado"], key="olho_pup", format_func=titulo_opcao)
-        with oc2:
-            olhos["motricidade_ocular"] = st.selectbox("Motricidade ocular/alinhamento", ["sem alterações aparentes", "estrabismo suspeito", "nistagmo", "alteração de seguimento visual"], key="olho_mot", format_func=titulo_opcao)
-            olhos["secrecao"] = st.selectbox("Secreção/lacrimejamento", ["ausente", "secreção ocular", "lacrimejamento", "fotofobia"], key="olho_sec", format_func=titulo_opcao)
-            olhos["fundoscopia"] = st.text_input("Fundoscopia/observação", value="Sem alterações aparentes quando avaliado.", key="olho_fundo")
-        pesco["Oftalmoscopia/olhos"] = olhos
-
-        st.markdown("#### Rinoscopia")
-        rino = {}
-        rc1, rc2 = st.columns(2)
-        with rc1:
-            rino["nariz"] = st.selectbox("Nariz", ["sem deformidades", "obstrução nasal", "batimento de asa nasal", "lesão externa"], key="rino_nariz", format_func=titulo_opcao)
-            rino["septo"] = st.selectbox("Septo nasal", ["centralizado", "desvio septal suspeito", "lesão/crosta", "não avaliado"], key="rino_septo", format_func=titulo_opcao)
-        with rc2:
-            rino["cornetos"] = st.selectbox("Cornetos/mucosa", ["sem edema relevante", "edemaciados", "pálidos", "hiperemiados"], key="rino_cornetos", format_func=titulo_opcao)
-            rino["muco"] = st.selectbox("Muco/secreção", ["ausente", "hialino", "purulento", "sanguinolento"], key="rino_muco", format_func=titulo_opcao)
-        rino["obs"] = st.text_area("Descrição — rinoscopia", value="Rinoscopia anterior sem alterações relevantes; sem secreção patológica evidente.", height=60)
-        pesco["Rinoscopia"] = rino
-
-        st.markdown("#### Oroscopia")
-        oro = {}
-        denticoes = ["não se aplica/sem dentes", "decídua", "mista", "permanente"]
-        o1, o2 = st.columns(2)
-        with o1:
-            oro["lábios"] = st.text_input("Lábios", value="Íntegros, sem lesões.")
-            oro["mucosa_jugal"] = st.text_input("Mucosa jugal", value="Úmida, corada, sem lesões.")
-            oro["denticao"] = st.selectbox("Dentição", denticoes, key="denticao", format_func=titulo_opcao)
-            oro["palato"] = st.text_input("Palato", value="Íntegro, sem alterações aparentes.")
-        with o2:
-            oro["língua"] = st.text_input("Língua", value="Sem alterações aparentes.")
-            oro["tonsilas_amigdalas"] = st.text_input("Tonsilas/amígdalas", value="Sem hipertrofia importante, sem exsudato.")
-            oro["orofaringe"] = st.text_input("Orofaringe", value="Sem hiperemia ou exsudato.")
-        with popover_ou_expander("🦷 Selecionar no mapa dental", expanded=False):
-            st.caption("Clique diretamente nas regiões da imagem odontológica. Depois complemente com dente/alteração específica, se necessário.")
-            if selecionar_odontograma_por_imagem is not None:
-                odontograma_mapa = selecionar_odontograma_por_imagem(key_suffix="exame")
-                st.session_state["odontograma_alteracoes_mapa"] = odontograma_mapa
-            else:
-                st.warning("Mapa dental interativo indisponível. Envie mapas_interativos.py, assets/mapas e adicione streamlit-image-coordinates/Pillow ao requirements.txt.")
-                odontograma_mapa = []
-            dentes_deciduos = ["55", "54", "53", "52", "51", "61", "62", "63", "64", "65", "85", "84", "83", "82", "81", "71", "72", "73", "74", "75"]
-            dentes_perm = ["18", "17", "16", "15", "14", "13", "12", "11", "21", "22", "23", "24", "25", "26", "27", "28", "48", "47", "46", "45", "44", "43", "42", "41", "31", "32", "33", "34", "35", "36", "37", "38"]
-            dentes_lista = dentes_deciduos if oro["denticao"] == "decídua" else (dentes_deciduos + dentes_perm if oro["denticao"] == "mista" else dentes_perm)
-            dentes_alt = selecionar_opcoes("Dentes com alteração — seleção manual complementar", dentes_lista, key="dentes_alt", cols=5, compacto=True)
-            alteracoes_dent = selecionar_opcoes("Tipo de alteração dental", ["cárie", "fratura", "sangramento gengival", "mobilidade", "mancha", "ausência", "dor", "má oclusão"], key="alt_dental", cols=3, compacto=True)
-            oro["dentes_alterados"] = list(dict.fromkeys((odontograma_mapa or []) + (dentes_alt or [])))
-            oro["alteracoes_dentarias"] = alteracoes_dent
-        pesco["Oroscopia"] = oro
-
-        st.markdown("#### Otoscopia")
-        oto = {}
-        ot1, ot2 = st.columns(2)
-        with ot1:
-            oto["pavilhao_direito"] = st.selectbox("Pavilhão auricular direito", ["sem alterações", "malformação", "dor à mobilização", "lesão"], key="oto_pd", format_func=titulo_opcao)
-            oto["meato_direito"] = st.selectbox("Meato/canal direito", ["pérvio", "cerume", "edema", "otorreia", "corpo estranho"], key="oto_md", format_func=titulo_opcao)
-            oto["mt_direita"] = st.selectbox("Membrana timpânica direita", ["íntegra e translúcida", "hiperemiada", "opaca", "abaulada", "perfurada", "não visualizada"], key="oto_mtd", format_func=titulo_opcao)
-        with ot2:
-            oto["pavilhao_esquerdo"] = st.selectbox("Pavilhão auricular esquerdo", ["sem alterações", "malformação", "dor à mobilização", "lesão"], key="oto_pe", format_func=titulo_opcao)
-            oto["meato_esquerdo"] = st.selectbox("Meato/canal esquerdo", ["pérvio", "cerume", "edema", "otorreia", "corpo estranho"], key="oto_me", format_func=titulo_opcao)
-            oto["mt_esquerda"] = st.selectbox("Membrana timpânica esquerda", ["íntegra e translúcida", "hiperemiada", "opaca", "abaulada", "perfurada", "não visualizada"], key="oto_mte", format_func=titulo_opcao)
-        oto["obs"] = st.text_area("Descrição — otoscopia", value="Pavilhões auriculares sem alterações; condutos auditivos pérvios; membranas timpânicas íntegras, translúcidas e sem abaulamento quando visualizadas.", height=60)
-        pesco["Otoscopia"] = oto
-
-    resp = {}; cardio = {}; abd = {}
-    with st.expander("Respiratório", expanded=False):
+if _render_block(0):
+    with tabs[0]:
+        st.markdown("<span id='eixo-anamnese'></span>", unsafe_allow_html=True)
+        st.subheader("📝 Anamnese estruturada")
+    
+        st.markdown("### Identificação do atendimento")
+        id1, id2, id3 = st.columns(3)
+        with id1:
+            sexo = st.selectbox("Sexo", ["Masculino", "Feminino"], key="sexo")
+        with id2:
+            data_nasc = st.date_input("Data de nascimento", key="data_nasc", format="DD/MM/YYYY")
+        with id3:
+            data_aval = st.date_input("Data da consulta", key="data_aval", format="DD/MM/YYYY")
+    
+        st.markdown("### Antecedentes pessoais — nascimento")
+        nb1, nb2, nb3 = st.columns(3)
+        with nb1:
+            peso_nasc_g = st.number_input("Peso ao nascer (g)", 300, 6500, key="peso_nasc_g", step=10)
+        with nb2:
+            estatura_nasc_cm = st.number_input("Estatura ao nascer (cm)", 0.0, 70.0, key="estatura_nasc_cm", step=0.5)
+        with nb3:
+            pc_nasc_cm = st.number_input("PC ao nascer (cm)", 0.0, 50.0, key="pc_nasc_cm", step=0.1)
+        ni1, ni2, na1, na2 = st.columns([1, 1, 1, 1])
+        with ni1:
+            ig_sem = st.number_input("IG ao nascer — semanas", 22, 42, key="ig_sem", step=1)
+        with ni2:
+            ig_dias = st.number_input("IG ao nascer — dias", 0, 6, key="ig_dias", step=1)
+        with na1:
+            apgar1 = st.number_input("Apgar 1º minuto", 0, 10, key="apgar1", step=1)
+        with na2:
+            apgar5 = st.number_input("Apgar 5º minuto", 0, 10, key="apgar5", step=1)
+        st.caption("Dados ao nascer ficam registrados nos antecedentes pessoais e alimentam classificação de IG/peso, ferro profilático e idade corrigida.")
+    
+        st.markdown("## Anamnese")
+        queixa = st.text_area("Queixa principal / História da doença atual", placeholder="Ex.: responsável refere tosse há 3 dias, febre...", height=120)
+    
+        st.markdown("### Interrogatório sintomatológico segmentar")
+        inter = {}
         cols = st.columns(2)
-        for i, (sec, ops) in enumerate(EXAME_RESPIRATORIO.items()):
+        for i, (seg, ops) in enumerate(INTERROGATORIO_SEGMENTAR.items()):
             with cols[i % 2]:
-                resp[sec] = selecionar_opcoes(sec, ops, key=f"resp_{sec}")
-        resp["descrição"] = st.text_area("Descrição respiratória", value="Tórax sem deformidades, expansibilidade preservada, som claro pulmonar e murmúrio vesicular presente bilateralmente, sem ruídos adventícios.", height=70)
-    with st.expander("Cardiovascular", expanded=False):
-        for sec, ops in EXAME_CARDIO.items():
-            cardio[sec] = selecionar_opcoes(sec, ops, key=f"cardio_{sec}")
-        cardio["descrição"] = st.text_area("Descrição cardiovascular", value="Ritmo cardíaco regular em dois tempos, bulhas normofonéticas, sem sopros audíveis; pulsos periféricos palpáveis e perfusão adequada.", height=70)
-    with st.expander("Abdominal", expanded=False):
-        cols = st.columns(2)
-        for i, (sec, ops) in enumerate(EXAME_ABDOMINAL.items()):
-            with cols[i % 2]:
-                abd[sec] = selecionar_opcoes(sec, ops, key=f"abd_{sec}")
-        abd["descrição"] = st.text_area("Descrição abdominal", value="Abdome plano ou globoso conforme biotipo, flácido, indolor à palpação, sem visceromegalias ou massas palpáveis; ruídos hidroaéreos presentes.", height=70)
-    with st.expander("Genitália", expanded=False):
-        gc1, gc2, gc3 = st.columns(3)
-        with gc1:
-            gen_tipo = st.selectbox("Caracterização", ["típica feminina", "típica masculina", "atípica/ambígua", "não avaliada"], key="gen_tipo", format_func=titulo_opcao)
-        with gc2:
-            gen_pelos = st.selectbox("Pilificação pubiana", ["ausente", "presente", "não avaliada"], key="gen_pelos", format_func=titulo_opcao)
-        with gc3:
-            tanner = st.selectbox("Tanner", ["G1/P1", "G2/P2", "G3/P3", "G4/P4", "G5/P5", "M1/P1", "M2/P2", "M3/P3", "M4/P4", "M5/P5", "não se aplica/não avaliado"], key="tanner")
-        genitalia = selecionar_opcoes("Achados de genitália", EXAME_GENITALIA, key="genitalia")
-        genitalia_obs = st.text_area("Descrição — genitália", value="Genitália externa típica para sexo informado, sem lesões, secreções ou sinais inflamatórios aparentes; pilificação compatível com idade quando aplicável.", height=70)
-    with st.expander("Osteomuscular / extremidades", expanded=False):
-        axial = selecionar_opcoes("Esqueleto axial / coluna", ["sem desvios aparentes", "cifose", "lordose acentuada", "escoliose suspeita", "dor à palpação", "limitação de mobilidade"], key="osteo_axial")
-        apendicular = selecionar_opcoes("Esqueleto apendicular / membros", EXAME_OSTEOMUSCULAR, key="osteo_apendicular")
-        osteo = {"axial": axial, "apendicular": apendicular}
-        osteo_obs = st.text_area("Descrição — osteomuscular", value="Coluna sem desvios aparentes; membros sem deformidades, assimetrias ou limitação de mobilidade; marcha compatível com a idade quando aplicável.", height=70)
-    with st.expander("Neurológico e reflexos", expanded=False):
-        sentidos = selecionar_opcoes("Sentidos / responsividade sensorial", ["visão aparentemente preservada", "audição aparentemente preservada", "responde a estímulos sonoros", "fixa e acompanha objetos", "alteração visual suspeita", "alteração auditiva suspeita"], key="neuro_sentidos")
-        marcha = st.selectbox("Marcha", ["não se aplica pela idade", "adequada para idade", "alterada", "claudicante", "atáxica", "não avaliada"], key="neuro_marcha", format_func=titulo_opcao)
-        neuro = selecionar_opcoes("Achados neurológicos", EXAME_NEUROLOGICO, key="neuro")
-        reflexos = selecionar_opcoes("Reflexos primitivos — RN/lactente", REFLEXOS_PRIMITIVOS, key="reflexos", cols=1)
-        marcos_auto = st.session_state.get("passagem_desenvolvimento", {}).get("marcos_presentes", [])
-        st.caption("Marcos do desenvolvimento assinalados na aba Desenvolvimento serão incorporados automaticamente à passagem.")
-        neuro_obs = st.text_area("Descrição — neurológico/reflexos", value="Criança alerta e interativa, tônus e força globalmente preservados, sem assimetrias motoras evidentes; reflexos e marcha compatíveis com idade quando aplicável.", height=70)
-    st.markdown("### Exames complementares")
-    n_exames = st.number_input("Número de exames complementares", 0, 12, 0, step=1)
-    exames_comp = []
-    for i in range(int(n_exames)):
-        with st.expander(f"Exame complementar {i+1}", expanded=False):
-            e1,e2,e3 = st.columns([1.5,1,1])
-            with e1: tipo_ex = st.selectbox("Tipo de exame", list(EXAMES_COMPLEMENTARES_MODELOS.keys()), key=f"ex_tipo_{i}")
-            with e2: data_ex = st.date_input("Data", value=data_aval, format="DD/MM/YYYY", key=f"ex_data_{i}")
-            with e3: status_ex = st.selectbox("Interpretação", ["normal", "alterado", "pendente", "não avaliado"], key=f"ex_status_{i}")
-            params = {}
-            pcols = st.columns(2)
-            for j, param in enumerate(EXAMES_COMPLEMENTARES_MODELOS.get(tipo_ex, [])):
-                with pcols[j % 2]: params[param] = st.text_input(param, key=f"ex_{i}_{param}")
-            alerta_ex = ""
-            if status_ex == "alterado":
-                alerta_ex = st.text_area("Alerta/conduta complementar por alteração", key=f"ex_alerta_{i}", height=70)
-            exames_comp.append({"tipo": tipo_ex, "data": fmt_data(data_ex), "status": status_ex, "parametros": params, "alerta": alerta_ex})
+                inter[seg] = selecionar_opcoes(seg, ops, key=f"is_{seg}")
+        inter_obs = st.text_area("Complemento do interrogatório sintomatológico", height=70)
+    
+        meds = render_lista_medicamentos("meduso", "Medicamentos em uso / suplementações profiláticas", idade_texto(idade_dias), peso, maximo=10)
+    
+        st.markdown("### Antecedentes maternos, gestacionais e obstétricos")
+        g1,g2,g3,g4 = st.columns(4)
+        with g1: gestas = st.number_input("Gestações (G)", 0, 20, 1, step=1)
+        with g2: partos_normais = st.number_input("Partos normais (PN)", 0, 20, 0, step=1)
+        with g3: partos_cesareos = st.number_input("Partos cesáreos (PC)", 0, 20, 0, step=1)
+        with g4: abortos = st.number_input("Abortos (A)", 0, 20, 0, step=1)
+        paridade = f"G{gestas} PN{partos_normais} PC{partos_cesareos} A{abortos}"
+    
+        n_filhos = st.number_input("Número de filhos vivos", 0, 20, 0, step=1)
+        filhos = []
+        if n_filhos:
+            with st.expander("Filhos vivos — sexo e idade", expanded=False):
+                for i in range(int(n_filhos)):
+                    fc1,fc2,fc3 = st.columns([1,1,2])
+                    with fc1: sx_f = st.selectbox("Sexo", ["Masculino", "Feminino", "Outro/não informado"], key=f"filho_sx_{i}")
+                    with fc2: idade_f = st.text_input("Idade", key=f"filho_idade_{i}", placeholder="Ex.: 7a; 3m")
+                    with fc3: obs_f = st.text_input("Observação", key=f"filho_obs_{i}")
+                    filhos.append({"sexo": sx_f, "idade": idade_f, "observacao": obs_f})
+    
+        ant_mat_inf = selecionar_opcoes("Infecções/intercorrências infecciosas maternas", DOENCAS_MATERNAS_INFECCIOSAS, key="ant_mat_inf")
+        ant_mat_clin = selecionar_opcoes("Doenças/comorbidades/intercorrências clínicas/obstétricas maternas", DOENCAS_MATERNAS_CLINICAS, key="ant_mat_clin")
+        ant_mat_det = {}
+        for inf in ant_mat_inf:
+            with st.expander(f"Detalhes — {inf}", expanded=False):
+                d1,d2,d3 = st.columns(3)
+                with d1: trat = st.selectbox("Tratada adequadamente?", ["sim", "não", "parcial", "não sabe"], key=f"inf_trat_{inf}")
+                with d2: ctrl = st.selectbox("Controlada/resolvida?", ["sim", "não", "em acompanhamento", "não sabe"], key=f"inf_ctrl_{inf}")
+                with d3: reperc = st.selectbox("Repercussão fetal/neonatal?", ["não", "sim", "não sabe"], key=f"inf_rep_{inf}")
+                obs = st.text_input("Observação", key=f"inf_obs_{inf}")
+                ant_mat_det[inf] = {"tratada": trat, "controlada": ctrl, "repercussao": reperc, "observacao": obs}
+        for cond in ant_mat_clin:
+            with st.expander(f"Controle/observação — {cond}", expanded=False):
+                ctrl = st.selectbox("Controle durante a gestação", ["adequado", "parcial", "inadequado", "não sabe"], key=f"clin_ctrl_{cond}")
+                obs = st.text_input("Observação", key=f"clin_obs_{cond}")
+                ant_mat_det[cond] = {"controle": ctrl, "observacao": obs}
+    
+        meds_gest = render_lista_medicamentos("medgest", "Medicamentos maternos usados na gestação", idade_texto(idade_dias), peso, maximo=8)
+        sups_gest = render_lista_medicamentos("supgest", "Suplementações maternas na gestação", idade_texto(idade_dias), peso, maximo=6)
+        vac_gest = selecionar_opcoes("Vacinação na gestação", VACINAS_GESTACAO, key="vac_gest")
+        vac_gest_obs = st.text_input("Observações sobre vacinação gestacional")
+    
+        st.markdown("### Antecedentes perinatais e triagens neonatais")
+        ant_peri = selecionar_opcoes("Intercorrências perinatais/neonatais", INTERCORRENCIAS_PERINATAIS, key="ant_peri")
+        peri_det = {}
+        campos_peri = {
+            "internação neonatal": "Internação neonatal: motivo e duração",
+            "UTI neonatal": "UTI neonatal: motivo e duração",
+            "fototerapia": "Fototerapia: motivo/duração",
+            "antibiótico neonatal": "Antibiótico neonatal: qual/motivo/duração",
+            "reanimação neonatal": "Reanimação: passos necessários e resposta",
+            "desconforto respiratório": "Desconforto respiratório: suporte usado e duração",
+            "transfusão": "Transfusão: tipo/motivo",
+        }
+        for item, label in campos_peri.items():
+            if item in ant_peri:
+                peri_det[item] = st.text_input(label, key=f"peri_{item}")
+        triagens = {}
+        tcols = st.columns(3)
+        for i, (teste, ops) in enumerate(TRIAGENS_NEONATAIS.items()):
+            with tcols[i % 3]:
+                val = st.selectbox(teste, ops, key=f"triagem_{teste}")
+                triagens[teste] = val
+                if val not in ("normal", "não sabe informar"):
+                    triagens[teste + " — detalhe"] = st.text_input(f"Detalhe: {teste}", key=f"triagem_det_{teste}")
+    
+        st.markdown("### Antecedentes patológicos e familiares")
+        ant_pat = selecionar_opcoes("Antecedentes patológicos", ANTECEDENTES_PATOLOGICOS, key="ant_pat")
+        det_pat = {}
+        for item in ["internações", "cirurgias", "alergias medicamentosas", "alergias alimentares", "convulsões", "transfusões", "acidentes/intoxicações"]:
+            if item in ant_pat:
+                det_pat[item] = st.text_input(f"Detalhar {item}: motivo, data, duração/procedimento", key=f"det_{item}")
+        meds_pat = render_lista_medicamentos("medpat", "Medicamentos já utilizados para antecedentes patológicos", idade_texto(idade_dias), peso, maximo=8)
+        ant_fam = selecionar_opcoes("Antecedentes familiares", ANTECEDENTES_FAMILIARES, key="ant_fam")
+    
+        st.markdown("### Hábitos de vida")
+        hab1,hab2 = st.columns(2)
+        with hab1:
+            alimentacao = selecionar_opcoes("Alimentação/aleitamento atual", TIPOS_ALEITAMENTO, key="alimentacao")
+            # Histórico de AME permanece relevante mesmo após a introdução alimentar,
+            # pois influencia a análise de ferro profilático e risco de anemia.
+            if idade_meses_cron >= 6:
+                historico_ame = st.selectbox("Histórico de AME até 6 meses", HISTORICO_AME[1:], help="Use para saber se a criança recebeu aleitamento materno exclusivo até 6 meses, mesmo que já esteja em alimentação complementar.")
+            else:
+                historico_ame = st.selectbox("Histórico/condição atual de AME", ["AME em curso", "não está em AME", "não sabe informar"], help="Em menores de 6 meses, indica se o aleitamento materno exclusivo está em curso.")
+            lacteo_precoce = ""
+            if historico_ame in ("AME interrompido antes de 6 meses", "não esteve em AME", "não está em AME"):
+                lacteo_precoce = st.selectbox("Principal substituto lácteo antes dos 6 meses", ALIMENTO_LACTEO_ANTES_6M[1:])
+            formula = ""
+            if "fórmula infantil exclusiva" in alimentacao or "aleitamento misto" in alimentacao:
+                formula = st.text_input("Fórmula atual: marca/tipo, volume, frequência, diluição")
+            sono = selecionar_opcoes("Sono", SONO, key="sono")
+            telas = selecionar_um("Telas", ["não usa", "uso ocasional", "< 1h/dia", "1–2h/dia", "> 2h/dia", "não informado"], key="telas")
+        with hab2:
+            fezes = selecionar_opcoes("Fezes — queixas/padrão", PADRAO_FEZES, key="fezes")
+            bristol = st.selectbox("Escala de Bristol", BRISTOL_FEZES, format_func=titulo_opcao)
+            freq_fezes = st.text_input("Frequência evacuatória", value="0", help="Ex.: 1x/dia, 3x/semana, 5x/dia")
+            urina = selecionar_opcoes("Micção/diurese", PADRAO_URINA, key="urina")
+            freq_urina = st.text_input("Frequência urinária/diurese", value="0", help="Ex.: 6 fraldas/dia, 5 micções/dia")
+            desfralde = selecionar_um("Desfralde/controle esfincteriano", ["não se aplica pela idade", "não iniciado", "em treinamento", "diurno adquirido", "diurno e noturno adquiridos", "regressão/perdas"], key="desfralde")
+            atividade = st.text_input("Atividade física/brincadeiras/creche/escola")
+        ame_adequado_para_ferro = (historico_ame in ("esteve em AME até 6 meses", "AME em curso"))
+        fatores_alimentares_anemia_auto = []
+        if lacteo_precoce in ("leite de vaca", "leite de cabra/outro leite animal", "misto com leite de vaca"):
+            fatores_alimentares_anemia_auto.append("leite animal antes de 6 meses/antes de 12 meses")
+        elif historico_ame in ("AME interrompido antes de 6 meses", "não esteve em AME", "não está em AME"):
+            fatores_alimentares_anemia_auto.append("AME ausente/interrompido antes de 6 meses — avaliar dieta/fórmula fortificada")
+    
+        st.markdown("### Condições socioeconômicas")
+        socio = selecionar_opcoes("Condições socioeconômicas/moradia", CONDICOES_MORADIA, key="socio")
+        sc1,sc2,sc3 = st.columns(3)
+        with sc1: tipo_casa = st.selectbox("Tipo de moradia", ["não informado", "casa", "apartamento", "cômodo", "zona rural", "outro"])
+        with sc2: comodos = st.number_input("Número de cômodos", 0, 20, 0, step=1)
+        with sc3: moradores = st.number_input("Número de moradores", 0, 30, 0, step=1)
+        animais = st.text_input("Animais domésticos")
+        coabit = st.text_input("Coabitantes/cuidadores principais")
 
-    consulta_dados = {
-        "queixa_hda": queixa, "interrogatorio": {**inter, "complemento": inter_obs}, "medicamentos_uso": meds,
-        "paridade": paridade, "filhos": {"numero": n_filhos, "lista": filhos},
-        "antecedentes_maternos": {"infecciosos": ant_mat_inf, "clinicos_obstetricos": ant_mat_clin, "detalhes": ant_mat_det},
-        "medicamentos_gestacao": meds_gest, "suplementacoes_gestacao": sups_gest, "vacinacao_gestacao": {"selecionadas": vac_gest, "obs": vac_gest_obs},
-        "antecedentes_perinatais": {"selecionados": ant_peri, "detalhes": peri_det}, "triagens_neonatais": triagens,
-        "antecedentes_patologicos": {"selecionados": ant_pat, "detalhes": det_pat, "medicamentos_previos": meds_pat}, "antecedentes_familiares": ant_fam,
-        "habitos": {"alimentacao_atual": alimentacao, "historico_ame": historico_ame, "substituto_lacteo_precoce": lacteo_precoce, "formula": formula, "sono": sono, "telas": telas, "fezes": fezes, "frequencia_fezes": freq_fezes, "bristol": bristol, "urina": urina, "frequencia_urina": freq_urina, "desfralde": desfralde, "atividade": atividade},
-        "socioeconomico": {"moradia": socio, "tipo_casa": tipo_casa, "comodos": comodos, "moradores": moradores, "animais": animais, "coabitantes": coabit},
-    }
-    exame_dados = {"sinais_vitais": f"T {temp:.1f}°C; FC {fc} bpm; FR {fr} irpm; SpO₂ {spo2}%; PA {pa or 'não aferida'}", "antropometria": f"Peso {peso:.1f} kg; estatura {estatura:.1f} cm; PC {pc:.1f} cm; IMC {imc:.1f}", "geral": {"achados": geral, "obs": geral_obs}, "pele_faneros": pele_dict, "cabeca_pescoco": pesco, "respiratorio": resp, "cardiovascular": cardio, "abdominal": abd, "genitalia": {"caracterizacao": gen_tipo, "pilificacao": gen_pelos, "tanner": tanner, "achados": genitalia, "obs": genitalia_obs}, "osteomuscular": {"achados": osteo, "obs": osteo_obs}, "neurologico": {"sentidos": sentidos, "marcha": marcha, "achados": neuro, "reflexos": reflexos, "marcos_auto": marcos_auto, "obs": neuro_obs}, "exames_complementares": exames_comp}
-    st.session_state["passagem_consulta"] = consulta_dados
-    st.session_state["passagem_exame"] = exame_dados
-
-with tabs[2]:
-    st.subheader("📈 Crescimento antropométrico")
-    st.caption("Antropometria integrada ao exame físico; aqui aparecem as curvas, z-scores, percentis e classificação.")
-    growth_summaries = []
-    stabs = st.tabs(["⚖️ Peso", "📏 Estatura", "🧮 IMC", "🧠 PC"])
-    cfg = [("Peso","Peso/idade","kg",peso,faixa,rx),("Estatura","Comprimento/estatura por idade","cm",estatura,faixa,rx),("IMC","IMC/idade","kg/m²",imc,faixa,rx),("PC","Perímetro cefálico/idade","cm",pc,"0 a 2 anos",[0,24])]
-    for tab,(param,titulo,unidade,valor,fx,r_x) in zip(stabs,cfg):
-        with tab:
-            if param == "PC" and idade_meses_float > 24:
-                st.info("Perímetro cefálico rotineiro em gráfico até 2 anos; medida pode ser registrada conforme contexto clínico.")
-                continue
-            resumo = plotar_crescimento(tabelas[sexo][param], param, titulo, unidade, valor, idade_dias, idade_meses_float, fx, r_x)
-            growth_summaries.append(resumo)
-    st.session_state["passagem_crescimento"] = {"resumos": [f"{r['titulo']}: {r['classificacao']} (Z {r['z']}, P{r['percentil']})" for r in growth_summaries]}
-
-with tabs[3]:
-    st.subheader("🧠 Desenvolvimento neuropsicomotor")
-    atual, anterior, proxima, todas = obter_marcos_vigilancia(idade_meses_float, prematuro)
-    st.markdown("<div class='timeline'>" + "".join(f"<div class='timeline-card {'current' if f['faixa']==atual['faixa'] else ''}'><span class='timeline-dot'></span><b>{f['faixa']}</b><br><span class='small-muted'>{'faixa atual' if f['faixa']==atual['faixa'] else 'vigilância'}</span></div>" for f in todas) + "</div>", unsafe_allow_html=True)
-    status_anterior=[]; presentes=[]; pendentes=[]
-    if anterior:
-        st.markdown(f"<div class='dev-instruction'><b>Confirmar faixa anterior: {anterior['faixa']}</b><br>{anterior['avaliacao']}</div>", unsafe_allow_html=True)
-        for area, marco in anterior["marcos"]:
+        consulta_dados = {
+            "queixa_hda": queixa, "interrogatorio": {**inter, "complemento": inter_obs}, "medicamentos_uso": meds,
+            "paridade": paridade, "filhos": {"numero": n_filhos, "lista": filhos},
+            "antecedentes_maternos": {"infecciosos": ant_mat_inf, "clinicos_obstetricos": ant_mat_clin, "detalhes": ant_mat_det},
+            "medicamentos_gestacao": meds_gest, "suplementacoes_gestacao": sups_gest, "vacinacao_gestacao": {"selecionadas": vac_gest, "obs": vac_gest_obs},
+            "antecedentes_perinatais": {"selecionados": ant_peri, "detalhes": peri_det}, "triagens_neonatais": triagens,
+            "antecedentes_patologicos": {"selecionados": ant_pat, "detalhes": det_pat, "medicamentos_previos": meds_pat}, "antecedentes_familiares": ant_fam,
+            "habitos": {"alimentacao_atual": alimentacao, "historico_ame": historico_ame, "substituto_lacteo_precoce": lacteo_precoce, "formula": formula, "sono": sono, "telas": telas, "fezes": fezes, "frequencia_fezes": freq_fezes, "bristol": bristol, "urina": urina, "frequencia_urina": freq_urina, "desfralde": desfralde, "atividade": atividade},
+            "socioeconomico": {"moradia": socio, "tipo_casa": tipo_casa, "comodos": comodos, "moradores": moradores, "animais": animais, "coabitantes": coabit},
+        }
+        st.session_state["passagem_consulta"] = consulta_dados
+    
+    
+if _render_block(1):
+    with tabs[1]:
+        st.markdown("<span id='eixo-exame-fisico'></span>", unsafe_allow_html=True)
+        st.markdown("## Exame físico")
+    
+        st.markdown("### Geral — sinais vitais e antropometria atual")
+        v1, v2, v3, v4, v5 = st.columns(5)
+        with v1:
+            temp = st.number_input("Temp. (°C)", 34.0, 42.0, key="temp", step=0.1)
+        with v2:
+            fc = st.number_input("FC (bpm)", 0, 240, key="fc", step=1)
+        with v3:
+            fr = st.number_input("FR (irpm)", 0, 100, key="fr", step=1)
+        with v4:
+            spo2 = st.number_input("SpO₂ (%)", 0, 100, key="spo2", step=1)
+        with v5:
+            pa = st.text_input("PA", key="pa")
+        a1, a2, a3, a4 = st.columns(4)
+        with a1:
+            peso = st.number_input("Peso atual (kg)", 0.5, 100.0, key="peso", step=0.1)
+        with a2:
+            estatura = st.number_input("Comprimento/estatura atual (cm)", 30.0, 170.0, key="estatura", step=0.5)
+        with a3:
+            pc = st.number_input("Perímetro cefálico atual (cm)", 20.0, 70.0, key="pc", step=0.1)
+        with a4:
+            st.metric("IMC calculado", f"{imc:.1f}")
+        st.caption("Sinais vitais e antropometria ficam no exame físico, como no fluxo de atendimento clínico.")
+        geral = selecionar_opcoes(
+            "Geral / ectoscopia",
+            ECTOSCOPIA,
+            key="geral_ectoscopia",
+            default=["bom estado geral", "ativo e reativo", "hidratado", "corado", "acianótico", "anicterico", "eupneico"],
+        )
+        geral_obs = st.text_area("Descrição geral", value="Criança em bom estado geral, ativa e reativa, hidratada, corada, acianótica, anictérica e eupneica ao exame.", height=70)
+    
+        pele_dict = {}
+        with st.expander("Pele e fâneros", expanded=False):
+            pele = selecionar_opcoes("Achados de pele/fâneros", EXAME_PELE_FANEROS, key="pele_faneros")
+            pele_obs = st.text_area("Descrição — pele e fâneros", value="Pele íntegra, sem lesões elementares relevantes, sem petéquias/equimoses, fâneros sem alterações aparentes.", height=70)
+            pele_dict = {"achados": pele, "obs": pele_obs}
+    
+        pesco = {}
+        with st.expander("Cabeça e pescoço", expanded=False):
+            st.markdown("#### Fontanelas")
+            f1, f2 = st.columns(2)
+            with f1:
+                font_ant_status = st.selectbox("Fontanela anterior", ["aberta normotensa", "fechada", "abaulada", "deprimida", "fechamento precoce suspeito"], key="font_ant", format_func=titulo_opcao)
+                font_ant_tam = st.number_input("Abertura FA — maior diâmetro (cm)", 0.0, 10.0, 0.0, step=0.1, key="font_ant_tam")
+            with f2:
+                font_post_status = st.selectbox("Fontanela posterior", ["fechada", "aberta normotensa", "abaulada", "deprimida"], key="font_post", format_func=titulo_opcao)
+                font_post_tam = st.number_input("Abertura FP — maior diâmetro (cm)", 0.0, 5.0, 0.0, step=0.1, key="font_post_tam")
+            if "aberta" in font_ant_status and idade_meses_cron > 18:
+                st.warning("Fontanela anterior aberta após ~18 meses: correlacionar com crescimento craniano, exame físico e contexto clínico.")
+            if "aberta" in font_post_status and idade_meses_cron > 3:
+                st.warning("Fontanela posterior aberta após ~2–3 meses: avaliar contexto clínico e desenvolvimento craniano.")
+            font_obs = st.text_area("Descrição — fontanelas", value="Fontanela anterior normotensa quando aberta; fontanela posterior fechada ou sem alterações para a idade.", height=60)
+            pesco["Fontanelas"] = {"anterior": font_ant_status, "tamanho_anterior_cm": font_ant_tam, "posterior": font_post_status, "tamanho_posterior_cm": font_post_tam, "obs": font_obs}
+    
+            st.markdown("#### Crânio")
+            cranio = selecionar_opcoes("Formato/achados cranianos", CABECA_PESCOCO.get("Crânio", []), key="cranio")
+            cranio_obs = st.text_area("Descrição — crânio", value="Crânio normocéfalo, sem deformidades aparentes relevantes.", height=60)
+            pesco["Crânio"] = {"achados": cranio, "obs": cranio_obs}
+    
+            st.markdown("#### Linfonodos")
+            regioes_linfo = ["Occipital", "Pré-auricular", "Retroauricular", "Submandibular", "Submentoniana", "Cervical anterior", "Cervical posterior", "Supraclavicular", "Infraclavicular", "Axilar", "Epitroclear"]
+            with popover_ou_expander("📍 Selecionar no mapa anatômico", expanded=False):
+                st.caption("Clique diretamente nas regiões da imagem anatômica. As áreas selecionadas entram automaticamente na passagem de caso.")
+                if selecionar_linfodos_por_imagem is not None:
+                    tipo_mapa_linfodo_exame = st.radio(
+                        "Mapa anatômico", ["bebê", "criança"], horizontal=True, key="tipo_mapa_linfodo_exame"
+                    )
+                    linfo_loc_mapa = selecionar_linfodos_por_imagem(tipo_mapa_linfodo_exame, key_suffix="exame")
+                    st.session_state["linfonodos_localizacao_mapa"] = linfo_loc_mapa
+                else:
+                    st.warning("Mapa interativo indisponível. Envie mapas_interativos.py, assets/mapas e adicione streamlit-image-coordinates/Pillow ao requirements.txt.")
+                    linfo_loc_mapa = []
+                linfo_loc_manual = selecionar_opcoes("Cadeias acometidas — seleção manual complementar", regioes_linfo, key="linfo_loc", cols=3, compacto=True)
+                linfo_loc = list(dict.fromkeys((linfo_loc_mapa or []) + (linfo_loc_manual or [])))
+            lc1, lc2, lc3 = st.columns(3)
+            with lc1:
+                linfo_qtd = st.number_input("Quantidade aproximada", 0, 50, 0, step=1, key="linfo_qtd")
+            with lc2:
+                linfo_tam = st.number_input("Maior tamanho (cm)", 0.0, 10.0, 0.0, step=0.1, key="linfo_tam")
+            with lc3:
+                linfo_lado = st.selectbox("Lateralidade", ["não se aplica", "direita", "esquerda", "bilateral"], key="linfo_lado", format_func=titulo_opcao)
+            linfo_carac = selecionar_opcoes("Características", ["amolecido", "endurecido", "móvel", "fixo", "único", "múltiplos", "coalescente", "doloroso", "indolor", "com sinais flogísticos", "sem sinais flogísticos"], key="linfo_carac", cols=3)
+            linfo_obs = st.text_area("Descrição — linfonodos", value="Sem linfonodomegalias palpáveis clinicamente relevantes.", height=60)
+            pesco["Linfonodos"] = {"localizacoes": linfo_loc, "quantidade": linfo_qtd, "maior_tamanho_cm": linfo_tam, "lateralidade": linfo_lado, "caracteristicas": linfo_carac, "obs": linfo_obs}
+    
+            st.markdown("#### Oftalmoscopia / olhos")
+            olhos = {}
+            oc1, oc2 = st.columns(2)
+            with oc1:
+                olhos["reflexo_vermelho"] = st.selectbox("Reflexo vermelho", ["presente e simétrico bilateralmente", "alterado", "assimétrico", "não avaliado"], key="olho_reflexo", format_func=titulo_opcao)
+                olhos["conjuntivas"] = st.selectbox("Conjuntivas", ["coradas", "hipocoradas", "hiperemiadas", "ictéricas"], key="olho_conj", format_func=titulo_opcao)
+                olhos["pupilas"] = st.selectbox("Pupilas", ["isocóricas e fotorreagentes", "anisocoria", "fotorreação alterada", "não avaliado"], key="olho_pup", format_func=titulo_opcao)
+            with oc2:
+                olhos["motricidade_ocular"] = st.selectbox("Motricidade ocular/alinhamento", ["sem alterações aparentes", "estrabismo suspeito", "nistagmo", "alteração de seguimento visual"], key="olho_mot", format_func=titulo_opcao)
+                olhos["secrecao"] = st.selectbox("Secreção/lacrimejamento", ["ausente", "secreção ocular", "lacrimejamento", "fotofobia"], key="olho_sec", format_func=titulo_opcao)
+                olhos["fundoscopia"] = st.text_input("Fundoscopia/observação", value="Sem alterações aparentes quando avaliado.", key="olho_fundo")
+            pesco["Oftalmoscopia/olhos"] = olhos
+    
+            st.markdown("#### Rinoscopia")
+            rino = {}
+            rc1, rc2 = st.columns(2)
+            with rc1:
+                rino["nariz"] = st.selectbox("Nariz", ["sem deformidades", "obstrução nasal", "batimento de asa nasal", "lesão externa"], key="rino_nariz", format_func=titulo_opcao)
+                rino["septo"] = st.selectbox("Septo nasal", ["centralizado", "desvio septal suspeito", "lesão/crosta", "não avaliado"], key="rino_septo", format_func=titulo_opcao)
+            with rc2:
+                rino["cornetos"] = st.selectbox("Cornetos/mucosa", ["sem edema relevante", "edemaciados", "pálidos", "hiperemiados"], key="rino_cornetos", format_func=titulo_opcao)
+                rino["muco"] = st.selectbox("Muco/secreção", ["ausente", "hialino", "purulento", "sanguinolento"], key="rino_muco", format_func=titulo_opcao)
+            rino["obs"] = st.text_area("Descrição — rinoscopia", value="Rinoscopia anterior sem alterações relevantes; sem secreção patológica evidente.", height=60)
+            pesco["Rinoscopia"] = rino
+    
+            st.markdown("#### Oroscopia")
+            oro = {}
+            denticoes = ["não se aplica/sem dentes", "decídua", "mista", "permanente"]
+            o1, o2 = st.columns(2)
+            with o1:
+                oro["lábios"] = st.text_input("Lábios", value="Íntegros, sem lesões.")
+                oro["mucosa_jugal"] = st.text_input("Mucosa jugal", value="Úmida, corada, sem lesões.")
+                oro["denticao"] = st.selectbox("Dentição", denticoes, key="denticao", format_func=titulo_opcao)
+                oro["palato"] = st.text_input("Palato", value="Íntegro, sem alterações aparentes.")
+            with o2:
+                oro["língua"] = st.text_input("Língua", value="Sem alterações aparentes.")
+                oro["tonsilas_amigdalas"] = st.text_input("Tonsilas/amígdalas", value="Sem hipertrofia importante, sem exsudato.")
+                oro["orofaringe"] = st.text_input("Orofaringe", value="Sem hiperemia ou exsudato.")
+            with popover_ou_expander("🦷 Selecionar no mapa dental", expanded=False):
+                st.caption("Clique diretamente nas regiões da imagem odontológica. Depois complemente com dente/alteração específica, se necessário.")
+                if selecionar_odontograma_por_imagem is not None:
+                    odontograma_mapa = selecionar_odontograma_por_imagem(key_suffix="exame")
+                    st.session_state["odontograma_alteracoes_mapa"] = odontograma_mapa
+                else:
+                    st.warning("Mapa dental interativo indisponível. Envie mapas_interativos.py, assets/mapas e adicione streamlit-image-coordinates/Pillow ao requirements.txt.")
+                    odontograma_mapa = []
+                dentes_deciduos = ["55", "54", "53", "52", "51", "61", "62", "63", "64", "65", "85", "84", "83", "82", "81", "71", "72", "73", "74", "75"]
+                dentes_perm = ["18", "17", "16", "15", "14", "13", "12", "11", "21", "22", "23", "24", "25", "26", "27", "28", "48", "47", "46", "45", "44", "43", "42", "41", "31", "32", "33", "34", "35", "36", "37", "38"]
+                dentes_lista = dentes_deciduos if oro["denticao"] == "decídua" else (dentes_deciduos + dentes_perm if oro["denticao"] == "mista" else dentes_perm)
+                dentes_alt = selecionar_opcoes("Dentes com alteração — seleção manual complementar", dentes_lista, key="dentes_alt", cols=5, compacto=True)
+                alteracoes_dent = selecionar_opcoes("Tipo de alteração dental", ["cárie", "fratura", "sangramento gengival", "mobilidade", "mancha", "ausência", "dor", "má oclusão"], key="alt_dental", cols=3, compacto=True)
+                oro["dentes_alterados"] = list(dict.fromkeys((odontograma_mapa or []) + (dentes_alt or [])))
+                oro["alteracoes_dentarias"] = alteracoes_dent
+            pesco["Oroscopia"] = oro
+    
+            st.markdown("#### Otoscopia")
+            oto = {}
+            ot1, ot2 = st.columns(2)
+            with ot1:
+                oto["pavilhao_direito"] = st.selectbox("Pavilhão auricular direito", ["sem alterações", "malformação", "dor à mobilização", "lesão"], key="oto_pd", format_func=titulo_opcao)
+                oto["meato_direito"] = st.selectbox("Meato/canal direito", ["pérvio", "cerume", "edema", "otorreia", "corpo estranho"], key="oto_md", format_func=titulo_opcao)
+                oto["mt_direita"] = st.selectbox("Membrana timpânica direita", ["íntegra e translúcida", "hiperemiada", "opaca", "abaulada", "perfurada", "não visualizada"], key="oto_mtd", format_func=titulo_opcao)
+            with ot2:
+                oto["pavilhao_esquerdo"] = st.selectbox("Pavilhão auricular esquerdo", ["sem alterações", "malformação", "dor à mobilização", "lesão"], key="oto_pe", format_func=titulo_opcao)
+                oto["meato_esquerdo"] = st.selectbox("Meato/canal esquerdo", ["pérvio", "cerume", "edema", "otorreia", "corpo estranho"], key="oto_me", format_func=titulo_opcao)
+                oto["mt_esquerda"] = st.selectbox("Membrana timpânica esquerda", ["íntegra e translúcida", "hiperemiada", "opaca", "abaulada", "perfurada", "não visualizada"], key="oto_mte", format_func=titulo_opcao)
+            oto["obs"] = st.text_area("Descrição — otoscopia", value="Pavilhões auriculares sem alterações; condutos auditivos pérvios; membranas timpânicas íntegras, translúcidas e sem abaulamento quando visualizadas.", height=60)
+            pesco["Otoscopia"] = oto
+    
+        resp = {}; cardio = {}; abd = {}
+        with st.expander("Respiratório", expanded=False):
+            cols = st.columns(2)
+            for i, (sec, ops) in enumerate(EXAME_RESPIRATORIO.items()):
+                with cols[i % 2]:
+                    resp[sec] = selecionar_opcoes(sec, ops, key=f"resp_{sec}")
+            resp["descrição"] = st.text_area("Descrição respiratória", value="Tórax sem deformidades, expansibilidade preservada, som claro pulmonar e murmúrio vesicular presente bilateralmente, sem ruídos adventícios.", height=70)
+        with st.expander("Cardiovascular", expanded=False):
+            for sec, ops in EXAME_CARDIO.items():
+                cardio[sec] = selecionar_opcoes(sec, ops, key=f"cardio_{sec}")
+            cardio["descrição"] = st.text_area("Descrição cardiovascular", value="Ritmo cardíaco regular em dois tempos, bulhas normofonéticas, sem sopros audíveis; pulsos periféricos palpáveis e perfusão adequada.", height=70)
+        with st.expander("Abdominal", expanded=False):
+            cols = st.columns(2)
+            for i, (sec, ops) in enumerate(EXAME_ABDOMINAL.items()):
+                with cols[i % 2]:
+                    abd[sec] = selecionar_opcoes(sec, ops, key=f"abd_{sec}")
+            abd["descrição"] = st.text_area("Descrição abdominal", value="Abdome plano ou globoso conforme biotipo, flácido, indolor à palpação, sem visceromegalias ou massas palpáveis; ruídos hidroaéreos presentes.", height=70)
+        with st.expander("Genitália", expanded=False):
+            gc1, gc2, gc3 = st.columns(3)
+            with gc1:
+                gen_tipo = st.selectbox("Caracterização", ["típica feminina", "típica masculina", "atípica/ambígua", "não avaliada"], key="gen_tipo", format_func=titulo_opcao)
+            with gc2:
+                gen_pelos = st.selectbox("Pilificação pubiana", ["ausente", "presente", "não avaliada"], key="gen_pelos", format_func=titulo_opcao)
+            with gc3:
+                tanner = st.selectbox("Tanner", ["G1/P1", "G2/P2", "G3/P3", "G4/P4", "G5/P5", "M1/P1", "M2/P2", "M3/P3", "M4/P4", "M5/P5", "não se aplica/não avaliado"], key="tanner")
+            genitalia = selecionar_opcoes("Achados de genitália", EXAME_GENITALIA, key="genitalia")
+            genitalia_obs = st.text_area("Descrição — genitália", value="Genitália externa típica para sexo informado, sem lesões, secreções ou sinais inflamatórios aparentes; pilificação compatível com idade quando aplicável.", height=70)
+        with st.expander("Osteomuscular / extremidades", expanded=False):
+            axial = selecionar_opcoes("Esqueleto axial / coluna", ["sem desvios aparentes", "cifose", "lordose acentuada", "escoliose suspeita", "dor à palpação", "limitação de mobilidade"], key="osteo_axial")
+            apendicular = selecionar_opcoes("Esqueleto apendicular / membros", EXAME_OSTEOMUSCULAR, key="osteo_apendicular")
+            osteo = {"axial": axial, "apendicular": apendicular}
+            osteo_obs = st.text_area("Descrição — osteomuscular", value="Coluna sem desvios aparentes; membros sem deformidades, assimetrias ou limitação de mobilidade; marcha compatível com a idade quando aplicável.", height=70)
+        with st.expander("Neurológico e reflexos", expanded=False):
+            sentidos = selecionar_opcoes("Sentidos / responsividade sensorial", ["visão aparentemente preservada", "audição aparentemente preservada", "responde a estímulos sonoros", "fixa e acompanha objetos", "alteração visual suspeita", "alteração auditiva suspeita"], key="neuro_sentidos")
+            marcha = st.selectbox("Marcha", ["não se aplica pela idade", "adequada para idade", "alterada", "claudicante", "atáxica", "não avaliada"], key="neuro_marcha", format_func=titulo_opcao)
+            neuro = selecionar_opcoes("Achados neurológicos", EXAME_NEUROLOGICO, key="neuro")
+            reflexos = selecionar_opcoes("Reflexos primitivos — RN/lactente", REFLEXOS_PRIMITIVOS, key="reflexos", cols=1)
+            marcos_auto = st.session_state.get("passagem_desenvolvimento", {}).get("marcos_presentes", [])
+            st.caption("Marcos do desenvolvimento assinalados na aba Desenvolvimento serão incorporados automaticamente à passagem.")
+            neuro_obs = st.text_area("Descrição — neurológico/reflexos", value="Criança alerta e interativa, tônus e força globalmente preservados, sem assimetrias motoras evidentes; reflexos e marcha compatíveis com idade quando aplicável.", height=70)
+        st.markdown("### Exames complementares")
+        n_exames = st.number_input("Número de exames complementares", 0, 12, 0, step=1)
+        exames_comp = []
+        for i in range(int(n_exames)):
+            with st.expander(f"Exame complementar {i+1}", expanded=False):
+                e1,e2,e3 = st.columns([1.5,1,1])
+                with e1: tipo_ex = st.selectbox("Tipo de exame", list(EXAMES_COMPLEMENTARES_MODELOS.keys()), key=f"ex_tipo_{i}")
+                with e2: data_ex = st.date_input("Data", value=data_aval, format="DD/MM/YYYY", key=f"ex_data_{i}")
+                with e3: status_ex = st.selectbox("Interpretação", ["normal", "alterado", "pendente", "não avaliado"], key=f"ex_status_{i}")
+                params = {}
+                pcols = st.columns(2)
+                for j, param in enumerate(EXAMES_COMPLEMENTARES_MODELOS.get(tipo_ex, [])):
+                    with pcols[j % 2]: params[param] = st.text_input(param, key=f"ex_{i}_{param}")
+                alerta_ex = ""
+                if status_ex == "alterado":
+                    alerta_ex = st.text_area("Alerta/conduta complementar por alteração", key=f"ex_alerta_{i}", height=70)
+                exames_comp.append({"tipo": tipo_ex, "data": fmt_data(data_ex), "status": status_ex, "parametros": params, "alerta": alerta_ex})
+    
+        consulta_dados = st.session_state.get("passagem_consulta", {})
+        exame_dados = {"sinais_vitais": f"T {temp:.1f}°C; FC {fc} bpm; FR {fr} irpm; SpO₂ {spo2}%; PA {pa or 'não aferida'}", "antropometria": f"Peso {peso:.1f} kg; estatura {estatura:.1f} cm; PC {pc:.1f} cm; IMC {imc:.1f}", "geral": {"achados": geral, "obs": geral_obs}, "pele_faneros": pele_dict, "cabeca_pescoco": pesco, "respiratorio": resp, "cardiovascular": cardio, "abdominal": abd, "genitalia": {"caracterizacao": gen_tipo, "pilificacao": gen_pelos, "tanner": tanner, "achados": genitalia, "obs": genitalia_obs}, "osteomuscular": {"achados": osteo, "obs": osteo_obs}, "neurologico": {"sentidos": sentidos, "marcha": marcha, "achados": neuro, "reflexos": reflexos, "marcos_auto": marcos_auto, "obs": neuro_obs}, "exames_complementares": exames_comp}
+        st.session_state["passagem_exame"] = exame_dados
+    
+if _render_block(2):
+    with tabs[2]:
+        st.subheader("📈 Crescimento antropométrico")
+        st.caption("Antropometria integrada ao exame físico; aqui aparecem as curvas, z-scores, percentis e classificação.")
+        growth_summaries = []
+        stabs = st.tabs(["⚖️ Peso", "📏 Estatura", "🧮 IMC", "🧠 PC"])
+        cfg = [("Peso","Peso/idade","kg",peso,faixa,rx),("Estatura","Comprimento/estatura por idade","cm",estatura,faixa,rx),("IMC","IMC/idade","kg/m²",imc,faixa,rx),("PC","Perímetro cefálico/idade","cm",pc,"0 a 2 anos",[0,24])]
+        for tab,(param,titulo,unidade,valor,fx,r_x) in zip(stabs,cfg):
+            with tab:
+                if param == "PC" and idade_meses_float > 24:
+                    st.info("Perímetro cefálico rotineiro em gráfico até 2 anos; medida pode ser registrada conforme contexto clínico.")
+                    continue
+                resumo = plotar_crescimento(tabelas[sexo][param], param, titulo, unidade, valor, idade_dias, idade_meses_float, fx, r_x)
+                growth_summaries.append(resumo)
+        st.session_state["passagem_crescimento"] = {"resumos": [f"{r['titulo']}: {r['classificacao']} (Z {r['z']}, P{r['percentil']})" for r in growth_summaries]}
+    
+if _render_block(3):
+    with tabs[3]:
+        st.subheader("🧠 Desenvolvimento neuropsicomotor")
+        atual, anterior, proxima, todas = obter_marcos_vigilancia(idade_meses_float, prematuro)
+        st.markdown("<div class='timeline'>" + "".join(f"<div class='timeline-card {'current' if f['faixa']==atual['faixa'] else ''}'><span class='timeline-dot'></span><b>{f['faixa']}</b><br><span class='small-muted'>{'faixa atual' if f['faixa']==atual['faixa'] else 'vigilância'}</span></div>" for f in todas) + "</div>", unsafe_allow_html=True)
+        status_anterior=[]; presentes=[]; pendentes=[]
+        if anterior:
+            st.markdown(f"<div class='dev-instruction'><b>Confirmar faixa anterior: {anterior['faixa']}</b><br>{anterior['avaliacao']}</div>", unsafe_allow_html=True)
+            for area, marco in anterior["marcos"]:
+                cols=st.columns([1.2,3,2]); cols[0].markdown(f"**{area}**"); cols[1].write(marco)
+                stt=cols[2].radio("Status", ["Presente","Ausente","Não verificado"], horizontal=True, key=f"ant_{area}_{marco}", label_visibility="collapsed")
+                status_anterior.append(stt); (presentes if stt=="Presente" else pendentes).append(f"{area}: {marco} ({stt})")
+        st.markdown(f"<div class='dev-instruction'><b>Faixa atual: {atual['faixa']}</b><br>{atual['avaliacao']}</div>", unsafe_allow_html=True)
+        img_dev = imagem_desenvolvimento_por_faixa(atual["faixa"])
+        if img_dev and Path(img_dev).exists(): st.image(img_dev, caption=f"Imagem de apoio — {atual['faixa']}", use_container_width=True)
+        status_atual=[]
+        for area, marco in atual["marcos"]:
             cols=st.columns([1.2,3,2]); cols[0].markdown(f"**{area}**"); cols[1].write(marco)
-            stt=cols[2].radio("Status", ["Presente","Ausente","Não verificado"], horizontal=True, key=f"ant_{area}_{marco}", label_visibility="collapsed")
-            status_anterior.append(stt); (presentes if stt=="Presente" else pendentes).append(f"{area}: {marco} ({stt})")
-    st.markdown(f"<div class='dev-instruction'><b>Faixa atual: {atual['faixa']}</b><br>{atual['avaliacao']}</div>", unsafe_allow_html=True)
-    img_dev = imagem_desenvolvimento_por_faixa(atual["faixa"])
-    if img_dev and Path(img_dev).exists(): st.image(img_dev, caption=f"Imagem de apoio — {atual['faixa']}", use_container_width=True)
-    status_atual=[]
-    for area, marco in atual["marcos"]:
-        cols=st.columns([1.2,3,2]); cols[0].markdown(f"**{area}**"); cols[1].write(marco)
-        stt=cols[2].radio("Status", ["Presente","Ausente","Não verificado"], horizontal=True, key=f"atu_{area}_{marco}", label_visibility="collapsed")
-        status_atual.append(stt); (presentes if stt=="Presente" else pendentes).append(f"{area}: {marco} ({stt})")
-    fatores_dev = selecionar_opcoes("Fatores de risco para desenvolvimento", ["Prematuridade", "Baixo peso ao nascer", "Internação neonatal prolongada", "Asfixia/hipóxia", "Infecção congênita", "Alteração auditiva/visual", "Vulnerabilidade social", "Suspeita de TEA ou regressão"], key="fatores_dev", default=["Prematuridade"] if prematuro else [])
-    clas_dev, texto_dev, cor_dev = classificar_desenvolvimento(status_atual, status_anterior, fatores_dev)
-    st.markdown(f"<div class='result-card' style='--result-color:{cor_dev};'><div><span class='result-label'>Síntese</span><h3>{clas_dev}</h3></div><div class='result-metrics'>{texto_dev}</div></div>", unsafe_allow_html=True)
-    c1,c2=st.columns(2)
-    with c1: st.markdown("<div class='soft-card'><div class='soft-title'>🎯 Se houver atraso/ausência</div><ul><li>Iniciar estimulação imediatamente.</li><li>Reavaliar em curto prazo e considerar equipe multiprofissional.</li><li>Investigar audição, visão, interação, tônus, assimetrias, sono e contexto familiar.</li></ul></div>", unsafe_allow_html=True)
-    with c2: st.markdown(f"<div class='soft-card'><div class='soft-title'>🚀 Próximos marcos — {(proxima or atual)['faixa']}</div>{html_lista((proxima or atual)['proxima'])}</div>", unsafe_allow_html=True)
-    st.session_state["passagem_desenvolvimento"] = {"resumo": f"{clas_dev}. {texto_dev}", "presentes": presentes, "pendentes": pendentes, "fatores": fatores_dev}
-
-with tabs[4]:
-    st.subheader("💉 Imunizações")
-    atrasadas, proximas = render_mapa_vacinal(idade_meses_float)
-    c1,c2=st.columns(2)
-    with c1: st.markdown("<div class='risk-box'><div class='soft-title'>🚨 Vacinas atrasadas/pendentes</div>" + html_lista(atrasadas) + "</div>", unsafe_allow_html=True)
-    with c2: st.markdown("<div class='risk-box'><div class='soft-title'>📅 Próximas imunizações</div>" + html_lista(proximas[:12]) + "</div>", unsafe_allow_html=True)
-    st.session_state["passagem_vacinas"] = {"atrasadas": atrasadas, "proximas": proximas[:12]}
-
-with tabs[5]:
-    st.subheader("💊 Ferro profilático e vitaminas")
-    riscos = fatores_risco_anemia()
-    c1,c2=st.columns(2)
-    with c1: fat_maternos = selecionar_opcoes("Fatores maternos/gestacionais para anemia", riscos["maternos_gestacionais"], key="fat_maternos_anemia")
-    with c2:
-        defaults=[]
-        if prematuro: defaults.append("Prematuridade")
-        if peso_nasc_g < 2500: defaults.append("Baixo peso ao nascer (< 2.500 g)")
-        fat_crianca_sel = selecionar_opcoes("Fatores da criança para anemia", riscos["crianca"], key="fat_crianca_anemia", default=defaults)
-    fat_crianca = list(dict.fromkeys(list(fat_crianca_sel) + fatores_alimentares_anemia_auto))
-    if fatores_alimentares_anemia_auto:
-        st.warning("Fator alimentar acrescentado automaticamente à análise de anemia/ferro: " + "; ".join(fatores_alimentares_anemia_auto))
-    rec = recomendacao_ferro(idade_meses_float, peso, peso_nasc_g, idade_gest_sem, ame_adequado_para_ferro, fat_crianca, fat_maternos)
-    st.markdown(f"<div class='result-card' style='--result-color:#0f766e;'><div><span class='result-label'>Ferro</span><h3>{rec['protocolo']}</h3></div><div class='result-metrics'>{rec['resumo']}<br><b>{rec['dose_mg_dia']:.1f} mg/dia</b></div></div>", unsafe_allow_html=True)
-    st.info(rec["conduta"])
-    sais = obter_sais_ferro(); sal_nome = st.selectbox("Apresentação do sal de ferro", list(sais.keys())); duracao = st.selectbox("Duração", ["90 dias","30 dias","60 dias","até a próxima consulta"]); ap=sais[sal_nome]; calc=calcular_apresentacao_ferro(rec["dose_mg_dia"], ap)
-    st.markdown(f"<div class='soft-card'><div class='soft-title'>🧮 Cálculo</div><b>{calc['texto']}</b><br><span class='small-muted'>{ap['marcas']} · {ap['obs']}</span></div>", unsafe_allow_html=True)
-    st.markdown(f"<div class='prescricao'>{modelo_prescricao_ferro(rec['dose_mg_dia'], sal_nome, ap, calc, duracao)}</div>", unsafe_allow_html=True)
-    st.markdown("### Vitamina A — PNSVA/MS")
-    va1,va2,va3=st.columns(3)
-    with va1: regiao_va=st.checkbox("Região prioritária?", help="Norte, Nordeste, Centro-Oeste, Vale do Jequitinhonha, Vale do Mucuri, Vale do Ribeira ou Norte de Minas.")
-    with va2: cad_va=st.checkbox("CadÚnico?")
-    with va3: dsei_va=st.checkbox("DSEI?")
-    vit_a=calcular_vitamina_a_pnsva(idade_meses_float, regiao_va, cad_va, dsei_va)
-    st.markdown(f"<div class='soft-card'><div class='soft-title'>Vitamina A</div><b>{'Indicada' if vit_a['indicada'] else 'Conferir critérios/não automática'}</b><p>Dose: {vit_a['dose']} · {vit_a.get('cor_capsula','—')} · {vit_a['frequencia']}</p><p>{vit_a['orientacao']}</p><p class='small-muted'>{vit_a['alerta']}</p></div>", unsafe_allow_html=True)
-    st.markdown("### Vitamina D e B12")
-    fat_d=selecionar_opcoes("Fatores de risco para hipovitaminose D", fatores_risco_hipovitaminose_d(), key="fat_vitd", default=["Prematuridade"] if prematuro else [])
-    vit_d=calcular_vitamina_d_sbp(idade_meses_float, peso, prematuro, peso_nasc_g, fat_d)
-    fat_b12=selecionar_opcoes("Fatores de risco para deficiência de B12", fatores_risco_vitamina_b12(), key="fat_b12")
-    st.markdown(f"<div class='soft-card'><div class='soft-title'>Vitamina D</div><p><b>Dose:</b> {vit_d['dose']}</p><p>{vit_d['orientacao']}</p><div class='prescricao'>{vit_d['prescricao']}</div></div>", unsafe_allow_html=True)
-    st.session_state["passagem_suplementacao"] = {"resumo": [f"Ferro: {rec['protocolo']} — {rec['resumo']} — {rec['dose_mg_dia']:.1f} mg/dia", f"Vitamina A: {vit_a['dose']} — {'indicada' if vit_a['indicada'] else 'conferir critérios'}", f"Vitamina D: {vit_d['dose']}", f"B12: {'risco presente' if fat_b12 else 'sem fatores de risco selecionados'}"], "fatores_risco": {"anemia_crianca": fat_crianca, "anemia_maternos": fat_maternos, "vitamina_d": fat_d, "b12": fat_b12}, "historico_ame": historico_ame, "substituto_lacteo_precoce": lacteo_precoce}
-
-with tabs[6]:
-    st.subheader("🩺 Protocolos ambulatoriais")
-    if obter_protocolos_ambulatoriais:
-        protos = obter_protocolos_ambulatoriais(); nome = st.selectbox("Protocolo", list(protos.keys()))
-        respostas = {}
-        for campo in campos_do_protocolo(nome):
-            cid=campo.get("id"); label=campo.get("label", cid); tipo=campo.get("tipo", "text"); ops=campo.get("opcoes", [])
-            if tipo == "checkbox": respostas[cid] = st.checkbox(label, key=f"proto_{nome}_{cid}")
-            elif tipo == "select": respostas[cid] = st.selectbox(label, ops, key=f"proto_{nome}_{cid}")
-            elif tipo == "multiselect": respostas[cid] = selecionar_opcoes(label, ops, key=f"proto_{nome}_{cid}")
-            elif tipo == "number": respostas[cid] = st.number_input(label, value=campo.get("value",0), key=f"proto_{nome}_{cid}")
-            else: respostas[cid] = st.text_input(label, key=f"proto_{nome}_{cid}")
-        res = executar_protocolo(nome, respostas, {"idade_meses":idade_meses_float,"peso":peso})
-        st.markdown(f"<div class='soft-card'><div class='soft-title'>Classificação</div>{res.get('classificacao','—')}</div>", unsafe_allow_html=True)
-        st.markdown(f"<div class='prescricao'>{res.get('prescricao','Sem prescrição automática.')}</div>", unsafe_allow_html=True)
-        meds_proto = render_lista_medicamentos("proto_meds", "Medicamentos efetivamente prescritos/orientados neste protocolo", idade_texto(idade_dias), peso, maximo=8)
-        st.markdown("<div class='soft-card'><div class='soft-title'>Orientações</div>" + html_lista(res.get('orientacoes', [])) + "</div>", unsafe_allow_html=True)
-        st.session_state["passagem_ambulatorio"] = {"protocolo": nome, "classificacao": res.get("classificacao"), "conduta_resumo": safe_join(res.get("conduta", res.get("orientacoes", []))), "prescricao": res.get("prescricao"), "medicamentos": meds_proto}
-    else:
-        st.info("Arquivo protocolos_ambulatoriais.py não carregado.")
-
-with tabs[7]:
-    st.subheader("📝 Orientações por idade e achados")
-    for bloco in obter_orientacoes_detalhadas(idade_meses_float, prematuro):
-        st.markdown(f"<div class='soft-card'><div class='soft-title'>{bloco['icone']} {bloco['titulo']}</div>{html_lista(bloco['itens'])}<p class='small-muted'><b>Conduta/orientação:</b> {bloco['conduta']}</p></div>", unsafe_allow_html=True)
-
-with tabs[8]:
-    st.subheader("🗺️ Mapas clínicos clicáveis")
-    st.caption("Use estes mapas como apoio para registrar linfonodos e alterações dentárias. As seleções entram na passagem de caso.")
-    if selecionar_linfodos_por_imagem is None or selecionar_odontograma_por_imagem is None:
-        st.warning("Mapas interativos indisponíveis. Envie o arquivo mapas_interativos.py e adicione streamlit-image-coordinates e Pillow ao requirements.txt.")
-    else:
-        m1, m2 = st.tabs(["Linfonodos", "Odontograma"])
-        with m1:
-            tipo_mapa_linfodo = st.radio("Mapa anatômico", ["bebê", "criança"], horizontal=True, key="tipo_mapa_linfodo_global")
-            linfonodos_mapa = selecionar_linfodos_por_imagem(tipo_mapa_linfodo, key_suffix="global")
-            st.session_state["linfonodos_localizacao_mapa"] = linfonodos_mapa
-        with m2:
-            dentes_mapa = selecionar_odontograma_por_imagem(key_suffix="global")
-            st.session_state["odontograma_alteracoes_mapa"] = dentes_mapa
-
-
-
-def _flatten_for_text(obj, prefix=""):
-    itens = []
-    if isinstance(obj, dict):
-        for k, v in obj.items():
-            itens.extend(_flatten_for_text(v, f"{prefix}{k}: "))
-    elif isinstance(obj, list):
-        for v in obj:
-            itens.extend(_flatten_for_text(v, prefix))
-    else:
-        txt = str(obj).strip()
-        if txt and txt.lower() not in ("não", "nao", "não informado", "normal", "0", "[]", "{}", "none"):
-            itens.append(prefix + txt)
-    return itens
-
-
-def _problemas_sugeridos():
-    problemas = []
-    cres = st.session_state.get("passagem_crescimento", {}).get("resumos", [])
-    for r in cres:
-        if not any(ok in r.lower() for ok in ["adequado", "eutrofia", "normal"]):
-            problemas.append({"titulo": "Alteração ou atenção no crescimento", "achados": [r], "protocolo": "Crescimento/nutrição"})
-    dev = st.session_state.get("passagem_desenvolvimento", {})
-    if dev.get("pendentes"):
-        problemas.append({"titulo": "Marco do desenvolvimento ausente/não verificado", "achados": dev.get("pendentes", [])[:8], "protocolo": "Desenvolvimento infantil"})
-    vac = st.session_state.get("passagem_vacinas", {}).get("atrasadas", [])
-    if vac:
-        problemas.append({"titulo": "Atraso vacinal", "achados": vac[:12], "protocolo": "Imunizações/PNI"})
-    sup = st.session_state.get("passagem_suplementacao", {})
-    for k, vals in sup.get("fatores_risco", {}).items():
-        if vals:
-            problemas.append({"titulo": f"Fatores de risco — {k.replace('_',' ')}", "achados": vals[:8], "protocolo": "Suplementação/triagem nutricional"})
-    amb = st.session_state.get("passagem_ambulatorio", {})
-    if amb.get("protocolo"):
-        problemas.append({"titulo": amb.get("protocolo"), "achados": [amb.get("classificacao", "")], "protocolo": amb.get("protocolo")})
-    queixa = st.session_state.get("passagem_consulta", {}).get("queixa_hda", "")
-    if queixa:
-        problemas.insert(0, {"titulo": "Queixa principal/HDA", "achados": [queixa], "protocolo": "Vincular a protocolo ambulatorial se houver"})
-    return problemas
-
-
+            stt=cols[2].radio("Status", ["Presente","Ausente","Não verificado"], horizontal=True, key=f"atu_{area}_{marco}", label_visibility="collapsed")
+            status_atual.append(stt); (presentes if stt=="Presente" else pendentes).append(f"{area}: {marco} ({stt})")
+        fatores_dev = selecionar_opcoes("Fatores de risco para desenvolvimento", ["Prematuridade", "Baixo peso ao nascer", "Internação neonatal prolongada", "Asfixia/hipóxia", "Infecção congênita", "Alteração auditiva/visual", "Vulnerabilidade social", "Suspeita de TEA ou regressão"], key="fatores_dev", default=["Prematuridade"] if prematuro else [])
+        clas_dev, texto_dev, cor_dev = classificar_desenvolvimento(status_atual, status_anterior, fatores_dev)
+        st.markdown(f"<div class='result-card' style='--result-color:{cor_dev};'><div><span class='result-label'>Síntese</span><h3>{clas_dev}</h3></div><div class='result-metrics'>{texto_dev}</div></div>", unsafe_allow_html=True)
+        c1,c2=st.columns(2)
+        with c1: st.markdown("<div class='soft-card'><div class='soft-title'>🎯 Se houver atraso/ausência</div><ul><li>Iniciar estimulação imediatamente.</li><li>Reavaliar em curto prazo e considerar equipe multiprofissional.</li><li>Investigar audição, visão, interação, tônus, assimetrias, sono e contexto familiar.</li></ul></div>", unsafe_allow_html=True)
+        with c2: st.markdown(f"<div class='soft-card'><div class='soft-title'>🚀 Próximos marcos — {(proxima or atual)['faixa']}</div>{html_lista((proxima or atual)['proxima'])}</div>", unsafe_allow_html=True)
+        st.session_state["passagem_desenvolvimento"] = {"resumo": f"{clas_dev}. {texto_dev}", "presentes": presentes, "pendentes": pendentes, "fatores": fatores_dev}
+    
+if _render_block(4):
+    with tabs[4]:
+        st.subheader("💉 Imunizações")
+        atrasadas, proximas = render_mapa_vacinal(idade_meses_float)
+        c1,c2=st.columns(2)
+        with c1: st.markdown("<div class='risk-box'><div class='soft-title'>🚨 Vacinas atrasadas/pendentes</div>" + html_lista(atrasadas) + "</div>", unsafe_allow_html=True)
+        with c2: st.markdown("<div class='risk-box'><div class='soft-title'>📅 Próximas imunizações</div>" + html_lista(proximas[:12]) + "</div>", unsafe_allow_html=True)
+        st.session_state["passagem_vacinas"] = {"atrasadas": atrasadas, "proximas": proximas[:12]}
+    
+if _render_block(5):
+    with tabs[5]:
+        st.subheader("💊 Ferro profilático e vitaminas")
+        riscos = fatores_risco_anemia()
+        c1,c2=st.columns(2)
+        with c1: fat_maternos = selecionar_opcoes("Fatores maternos/gestacionais para anemia", riscos["maternos_gestacionais"], key="fat_maternos_anemia")
+        with c2:
+            defaults=[]
+            if prematuro: defaults.append("Prematuridade")
+            if peso_nasc_g < 2500: defaults.append("Baixo peso ao nascer (< 2.500 g)")
+            fat_crianca_sel = selecionar_opcoes("Fatores da criança para anemia", riscos["crianca"], key="fat_crianca_anemia", default=defaults)
+        fat_crianca = list(dict.fromkeys(list(fat_crianca_sel) + fatores_alimentares_anemia_auto))
+        if fatores_alimentares_anemia_auto:
+            st.warning("Fator alimentar acrescentado automaticamente à análise de anemia/ferro: " + "; ".join(fatores_alimentares_anemia_auto))
+        rec = recomendacao_ferro(idade_meses_float, peso, peso_nasc_g, idade_gest_sem, ame_adequado_para_ferro, fat_crianca, fat_maternos)
+        st.markdown(f"<div class='result-card' style='--result-color:#0f766e;'><div><span class='result-label'>Ferro</span><h3>{rec['protocolo']}</h3></div><div class='result-metrics'>{rec['resumo']}<br><b>{rec['dose_mg_dia']:.1f} mg/dia</b></div></div>", unsafe_allow_html=True)
+        st.info(rec["conduta"])
+        sais = obter_sais_ferro(); sal_nome = st.selectbox("Apresentação do sal de ferro", list(sais.keys())); duracao = st.selectbox("Duração", ["90 dias","30 dias","60 dias","até a próxima consulta"]); ap=sais[sal_nome]; calc=calcular_apresentacao_ferro(rec["dose_mg_dia"], ap)
+        st.markdown(f"<div class='soft-card'><div class='soft-title'>🧮 Cálculo</div><b>{calc['texto']}</b><br><span class='small-muted'>{ap['marcas']} · {ap['obs']}</span></div>", unsafe_allow_html=True)
+        st.markdown(f"<div class='prescricao'>{modelo_prescricao_ferro(rec['dose_mg_dia'], sal_nome, ap, calc, duracao)}</div>", unsafe_allow_html=True)
+        st.markdown("### Vitamina A — PNSVA/MS")
+        va1,va2,va3=st.columns(3)
+        with va1: regiao_va=st.checkbox("Região prioritária?", help="Norte, Nordeste, Centro-Oeste, Vale do Jequitinhonha, Vale do Mucuri, Vale do Ribeira ou Norte de Minas.")
+        with va2: cad_va=st.checkbox("CadÚnico?")
+        with va3: dsei_va=st.checkbox("DSEI?")
+        vit_a=calcular_vitamina_a_pnsva(idade_meses_float, regiao_va, cad_va, dsei_va)
+        st.markdown(f"<div class='soft-card'><div class='soft-title'>Vitamina A</div><b>{'Indicada' if vit_a['indicada'] else 'Conferir critérios/não automática'}</b><p>Dose: {vit_a['dose']} · {vit_a.get('cor_capsula','—')} · {vit_a['frequencia']}</p><p>{vit_a['orientacao']}</p><p class='small-muted'>{vit_a['alerta']}</p></div>", unsafe_allow_html=True)
+        st.markdown("### Vitamina D e B12")
+        fat_d=selecionar_opcoes("Fatores de risco para hipovitaminose D", fatores_risco_hipovitaminose_d(), key="fat_vitd", default=["Prematuridade"] if prematuro else [])
+        vit_d=calcular_vitamina_d_sbp(idade_meses_float, peso, prematuro, peso_nasc_g, fat_d)
+        fat_b12=selecionar_opcoes("Fatores de risco para deficiência de B12", fatores_risco_vitamina_b12(), key="fat_b12")
+        st.markdown(f"<div class='soft-card'><div class='soft-title'>Vitamina D</div><p><b>Dose:</b> {vit_d['dose']}</p><p>{vit_d['orientacao']}</p><div class='prescricao'>{vit_d['prescricao']}</div></div>", unsafe_allow_html=True)
+        st.session_state["passagem_suplementacao"] = {"resumo": [f"Ferro: {rec['protocolo']} — {rec['resumo']} — {rec['dose_mg_dia']:.1f} mg/dia", f"Vitamina A: {vit_a['dose']} — {'indicada' if vit_a['indicada'] else 'conferir critérios'}", f"Vitamina D: {vit_d['dose']}", f"B12: {'risco presente' if fat_b12 else 'sem fatores de risco selecionados'}"], "fatores_risco": {"anemia_crianca": fat_crianca, "anemia_maternos": fat_maternos, "vitamina_d": fat_d, "b12": fat_b12}, "historico_ame": historico_ame, "substituto_lacteo_precoce": lacteo_precoce}
+    
+if _render_block(6):
+    with tabs[6]:
+        st.subheader("🩺 Protocolos ambulatoriais")
+        if obter_protocolos_ambulatoriais:
+            protos = obter_protocolos_ambulatoriais(); nome = st.selectbox("Protocolo", list(protos.keys()))
+            respostas = {}
+            for campo in campos_do_protocolo(nome):
+                cid=campo.get("id"); label=campo.get("label", cid); tipo=campo.get("tipo", "text"); ops=campo.get("opcoes", [])
+                if tipo == "checkbox": respostas[cid] = st.checkbox(label, key=f"proto_{nome}_{cid}")
+                elif tipo == "select": respostas[cid] = st.selectbox(label, ops, key=f"proto_{nome}_{cid}")
+                elif tipo == "multiselect": respostas[cid] = selecionar_opcoes(label, ops, key=f"proto_{nome}_{cid}")
+                elif tipo == "number": respostas[cid] = st.number_input(label, value=campo.get("value",0), key=f"proto_{nome}_{cid}")
+                else: respostas[cid] = st.text_input(label, key=f"proto_{nome}_{cid}")
+            res = executar_protocolo(nome, respostas, {"idade_meses":idade_meses_float,"peso":peso})
+            st.markdown(f"<div class='soft-card'><div class='soft-title'>Classificação</div>{res.get('classificacao','—')}</div>", unsafe_allow_html=True)
+            st.markdown(f"<div class='prescricao'>{res.get('prescricao','Sem prescrição automática.')}</div>", unsafe_allow_html=True)
+            meds_proto = render_lista_medicamentos("proto_meds", "Medicamentos efetivamente prescritos/orientados neste protocolo", idade_texto(idade_dias), peso, maximo=8)
+            st.markdown("<div class='soft-card'><div class='soft-title'>Orientações</div>" + html_lista(res.get('orientacoes', [])) + "</div>", unsafe_allow_html=True)
+            st.session_state["passagem_ambulatorio"] = {"protocolo": nome, "classificacao": res.get("classificacao"), "conduta_resumo": safe_join(res.get("conduta", res.get("orientacoes", []))), "prescricao": res.get("prescricao"), "medicamentos": meds_proto}
+        else:
+            st.info("Arquivo protocolos_ambulatoriais.py não carregado.")
+    
+if _render_block(7):
+    with tabs[7]:
+        st.subheader("📝 Orientações por idade e achados")
+        for bloco in obter_orientacoes_detalhadas(idade_meses_float, prematuro):
+            st.markdown(f"<div class='soft-card'><div class='soft-title'>{bloco['icone']} {bloco['titulo']}</div>{html_lista(bloco['itens'])}<p class='small-muted'><b>Conduta/orientação:</b> {bloco['conduta']}</p></div>", unsafe_allow_html=True)
+    
+if _render_block(8):
+    with tabs[8]:
+        st.subheader("🗺️ Mapas clínicos clicáveis")
+        st.caption("Use estes mapas como apoio para registrar linfonodos e alterações dentárias. As seleções entram na passagem de caso.")
+        if selecionar_linfodos_por_imagem is None or selecionar_odontograma_por_imagem is None:
+            st.warning("Mapas interativos indisponíveis. Envie o arquivo mapas_interativos.py e adicione streamlit-image-coordinates e Pillow ao requirements.txt.")
+        else:
+            m1, m2 = st.tabs(["Linfonodos", "Odontograma"])
+            with m1:
+                tipo_mapa_linfodo = st.radio("Mapa anatômico", ["bebê", "criança"], horizontal=True, key="tipo_mapa_linfodo_global")
+                linfonodos_mapa = selecionar_linfodos_por_imagem(tipo_mapa_linfodo, key_suffix="global")
+                st.session_state["linfonodos_localizacao_mapa"] = linfonodos_mapa
+            with m2:
+                dentes_mapa = selecionar_odontograma_por_imagem(key_suffix="global")
+                st.session_state["odontograma_alteracoes_mapa"] = dentes_mapa
+    
+    
+    
+    def _flatten_for_text(obj, prefix=""):
+        itens = []
+        if isinstance(obj, dict):
+            for k, v in obj.items():
+                itens.extend(_flatten_for_text(v, f"{prefix}{k}: "))
+        elif isinstance(obj, list):
+            for v in obj:
+                itens.extend(_flatten_for_text(v, prefix))
+        else:
+            txt = str(obj).strip()
+            if txt and txt.lower() not in ("não", "nao", "não informado", "normal", "0", "[]", "{}", "none"):
+                itens.append(prefix + txt)
+        return itens
+    
+    
+    def _problemas_sugeridos():
+        problemas = []
+        cres = st.session_state.get("passagem_crescimento", {}).get("resumos", [])
+        for r in cres:
+            if not any(ok in r.lower() for ok in ["adequado", "eutrofia", "normal"]):
+                problemas.append({"titulo": "Alteração ou atenção no crescimento", "achados": [r], "protocolo": "Crescimento/nutrição"})
+        dev = st.session_state.get("passagem_desenvolvimento", {})
+        if dev.get("pendentes"):
+            problemas.append({"titulo": "Marco do desenvolvimento ausente/não verificado", "achados": dev.get("pendentes", [])[:8], "protocolo": "Desenvolvimento infantil"})
+        vac = st.session_state.get("passagem_vacinas", {}).get("atrasadas", [])
+        if vac:
+            problemas.append({"titulo": "Atraso vacinal", "achados": vac[:12], "protocolo": "Imunizações/PNI"})
+        sup = st.session_state.get("passagem_suplementacao", {})
+        for k, vals in sup.get("fatores_risco", {}).items():
+            if vals:
+                problemas.append({"titulo": f"Fatores de risco — {k.replace('_',' ')}", "achados": vals[:8], "protocolo": "Suplementação/triagem nutricional"})
+        amb = st.session_state.get("passagem_ambulatorio", {})
+        if amb.get("protocolo"):
+            problemas.append({"titulo": amb.get("protocolo"), "achados": [amb.get("classificacao", "")], "protocolo": amb.get("protocolo")})
+        queixa = st.session_state.get("passagem_consulta", {}).get("queixa_hda", "")
+        if queixa:
+            problemas.insert(0, {"titulo": "Queixa principal/HDA", "achados": [queixa], "protocolo": "Vincular a protocolo ambulatorial se houver"})
+        return problemas
+    
+    
 def _render_diagnosticos():
     st.markdown("<span id='eixo-diagnosticos'></span>", unsafe_allow_html=True)
     st.subheader("🧩 Diagnósticos, raciocínio clínico e lista de problemas")
@@ -1445,9 +1509,10 @@ def _render_plano_terapeutico(plano_base):
         st.markdown(f"<div class='soft-card'><div class='soft-title'>{bloco['icone']} {bloco['titulo']}</div>{html_lista(bloco['itens'])}</div>", unsafe_allow_html=True)
 
 
-with tabs[9]:
-    _render_diagnosticos()
-
+if _render_block(9):
+    with tabs[9]:
+        _render_diagnosticos()
+    
 # Plano sugestivo básico para passagem
 plano = []
 qc = st.session_state.get("passagem_consulta", {}).get("queixa_hda", "")
@@ -1462,10 +1527,11 @@ if st.session_state.get("passagem_desenvolvimento", {}).get("pendentes"):
 plano.append("programar retorno conforme achados clínicos, crescimento, desenvolvimento e demanda familiar")
 st.session_state["passagem_plano"] = plano
 
-with tabs[10]:
-    _render_plano_terapeutico(plano)
-
-
-# Abre a passagem no fim da execução, após todas as seções atualizarem o session_state.
+if _render_block(10):
+    with tabs[10]:
+        _render_plano_terapeutico(plano)
+    
+    
+    # Abre a passagem no fim da execução, após todas as seções atualizarem o session_state.
 if st.session_state.pop("abrir_passagem_flag", False):
     abrir_passagem()
