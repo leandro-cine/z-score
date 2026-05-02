@@ -341,13 +341,17 @@ def _html_items(texto_ou_lista):
 
 def _card_vacina_anchor(vacina: dict, stt: dict, modal_id: str):
     bg = _hex_rgba(vacina.get("cor", "#e5e7eb"), stt["opacidade"])
-    return f"""
-    <a class='vaccine-card-link {stt['classe']}' href='#{modal_id}' style='background:{bg};'>
-        <div class='vaccine-card-age'>{vacina['idade_label']}</div>
-        <div class='vaccine-card-name'>{vacina['nome']}</div>
-        <div class='vaccine-card-dose'>{vacina['dose']}</div>
-        <div class='vaccine-card-status'>{stt['rotulo']}</div>
-    </a>
+
+    return (
+        f"<a class='vaccine-card-link {stt['classe']}' "
+        f"href='#{modal_id}' "
+        f"style='background:{bg};'>"
+        f"<div class='vaccine-card-age'>{vacina['idade_label']}</div>"
+        f"<div class='vaccine-card-name'>{vacina['nome']}</div>"
+        f"<div class='vaccine-card-dose'>{vacina['dose']}</div>"
+        f"<div class='vaccine-card-status'>{stt['rotulo']}</div>"
+        f"</a>"
+    )
     """
 
 
@@ -422,7 +426,13 @@ def render_mapa_vacinal_cards(idade_meses_float: float):
             modal_id = "vac-" + _slug_modal(vacina["id"])
             cards.append(_card_vacina_anchor(vacina, stt, modal_id))
             modais.append(_modal_vacina_html(vacina, stt, modal_id))
-        st.markdown(f"<div class='vaccine-age-section'><div class='vaccine-age-title'>{grupo}</div><div class='vaccine-card-grid'>{''.join(cards)}</div></div>", unsafe_allow_html=True)
+        st.markdown(
+    f"<div class='vaccine-age-section'>"
+    f"<div class='vaccine-age-title'>{grupo}</div>"
+    f"<div class='vaccine-card-grid'>{html_cards}</div>"
+    f"</div>",
+    unsafe_allow_html=True
+))
 
     st.markdown("".join(modais), unsafe_allow_html=True)
     st.markdown("</div>", unsafe_allow_html=True)
