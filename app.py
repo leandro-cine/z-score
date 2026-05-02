@@ -182,11 +182,10 @@ def selecionar_opcoes(label, opcoes, key, default=None, cols=2, help=None, compa
     if not resumo:
         resumo = "Nenhum selecionado"
 
-    st.markdown(
-        f"<div class='compact-select-summary modern-select-card'><div class='modern-select-label'>{label}</div><div class='modern-select-value'>{escape_html(resumo)}</div></div>",
-        unsafe_allow_html=True,
-    )
-    with popover_ou_expander(f"{label}", expanded=False):
+    # Um único campo clicável abre o pop-up. O resumo selecionado aparece no próprio campo,
+    # evitando botão duplicado e poluição visual.
+    titulo_pop = f"{label} — {resumo}" if resumo and resumo != "Nenhum selecionado" else f"{label}"
+    with popover_ou_expander(titulo_pop, expanded=False):
         selecionados = _render_checkboxes_inline("Opções mais comuns", opcoes, key, default=default, cols=cols, help=help)
         if permitir_outros:
             st.markdown("**Outra alteração não listada**")
@@ -700,6 +699,72 @@ def render_lista_medicamentos(prefix: str, titulo: str, idade_txt: str, peso_kg:
         itens.append(render_medicamento(f"{prefix}_{i}", f"{titulo} {i+1}", idade_txt, peso_kg, expanded=True))
     return itens
 
+
+
+def atualizar_passagem_consulta(**kwargs):
+    dados = st.session_state.get("passagem_consulta", {})
+    dados.update(kwargs)
+    st.session_state["passagem_consulta"] = dados
+
+
+def atualizar_passagem_exame(**kwargs):
+    dados = st.session_state.get("passagem_exame", {})
+    dados.update(kwargs)
+    st.session_state["passagem_exame"] = dados
+
+
+def _flatten_for_text(obj, prefix=""):
+    itens = []
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            itens.extend(_flatten_for_text(v, f"{prefix}{k}: "))
+    elif isinstance(obj, list):
+        for v in obj:
+            itens.extend(_flatten_for_text(v, prefix))
+    else:
+        txt = str(obj).strip()
+        if txt and txt.lower() not in ("não", "nao", "não informado", "normal", "0", "[]", "{}", "none", "sem alterações aparentes", "ausente"):
+            itens.append(prefix + txt)
+    return itens
+
+
+def _descricoes_normais_exame():
+    return {
+        "pele_faneros": "Pele íntegra, sem lesões elementares relevantes, sem petéquias/equimoses, fâneros sem alterações aparentes.",
+        "geral": "Criança em bom estado geral, ativa e reativa, hidratada, corada, acianótica, anictérica e eupneica ao exame.",
+        "respiratorio": "Tórax sem deformidades, expansibilidade preservada, som claro pulmonar e murmúrio vesicular presente bilateralmente, sem ruídos adventícios.",
+        "cardiovascular": "Ritmo cardíaco regular em dois tempos, bulhas normofonéticas, sem sopros audíveis; pulsos periféricos palpáveis e perfusão adequada.",
+        "abdominal": "Abdome plano ou globoso conforme biotipo, flácido, indolor à palpação, sem visceromegalias ou massas palpáveis; ruídos hidroaéreos presentes.",
+        "genitalia": "Genitália externa típica para sexo informado, sem lesões, secreções ou sinais inflamatórios aparentes; pilificação compatível com idade quando aplicável.",
+        "osteomuscular": "Coluna sem desvios aparentes; membros sem deformidades, assimetrias ou limitação de mobilidade; marcha compatível com a idade quando aplicável.",
+        "neurologico": "Criança alerta e interativa, tônus e força globalmente preservados, sem assimetrias motoras evidentes; reflexos e marcha compatíveis com idade quando aplicável.",
+    }
+
+
+def _problemas_sugeridos():
+    problemas = []
+    cres = st.session_state.get("passagem_crescimento", {}).get("resumos", [])
+    for r in cres:
+        if not any(ok in str(r).lower() for ok in ["adequado", "eutrofia", "normal"]):
+            problemas.append({"titulo": "Alteração ou atenção no crescimento", "achados": [r], "protocolo": "Crescimento/nutrição"})
+    dev = st.session_state.get("passagem_desenvolvimento", {})
+    if dev.get("pendentes"):
+        problemas.append({"titulo": "Marco do desenvolvimento ausente/não verificado", "achados": dev.get("pendentes", [])[:8], "protocolo": "Desenvolvimento infantil"})
+    vac = st.session_state.get("passagem_vacinas", {}).get("atrasadas", [])
+    if vac:
+        problemas.append({"titulo": "Atraso vacinal", "achados": vac[:12], "protocolo": "Imunizações/PNI"})
+    sup = st.session_state.get("passagem_suplementacao", {})
+    for k, vals in sup.get("fatores_risco", {}).items():
+        if vals:
+            problemas.append({"titulo": f"Fatores de risco — {k.replace('_',' ')}", "achados": vals[:8], "protocolo": "Suplementação/triagem nutricional"})
+    amb = st.session_state.get("passagem_ambulatorio", {})
+    if amb.get("protocolo"):
+        problemas.append({"titulo": amb.get("protocolo"), "achados": [amb.get("classificacao", "")], "protocolo": amb.get("protocolo")})
+    queixa = st.session_state.get("passagem_consulta", {}).get("queixa_hda", "")
+    if queixa:
+        problemas.insert(0, {"titulo": "Queixa principal/HDA", "achados": [queixa], "protocolo": "Vincular a protocolo ambulatorial se houver"})
+    return problemas
+
 # =========================
 # Render principal
 # =========================
@@ -781,6 +846,8 @@ class_ig = classificar_idade_gestacional(idade_gest_sem)
 class_nasc, riscos_nasc = classificar_peso_ig(peso_nasc_g, idade_gest_sem)
 imc = peso / ((estatura/100)**2)
 res_ant = classificar_antropometria(tabelas, sexo, idade_dias, idade_meses_float, peso, estatura, pc) if tabelas else {}
+ame_adequado_para_ferro = st.session_state.get("ame_adequado_para_ferro", True)
+fatores_alimentares_anemia_auto = st.session_state.get("fatores_alimentares_anemia_auto", [])
 
 # Comportamento tipo accordion: ao abrir uma seção/expander, tenta fechar as demais.
 # Em Streamlit puro isso depende da estrutura interna do navegador, então fica como melhoria progressiva.
@@ -864,11 +931,15 @@ _subtabs = st.tabs(_subtabs_por_eixo.get(_EIXO, _subtabs_por_eixo["📝 Anamnese
 
 # Contextos reais de cada bloco existente, agora remapeados ao eixo/subseção desejado.
 # Blocos não pertencentes ao eixo selecionado não são executados.
-tabs = [None] * 11
+tabs = [None] * 15
 if _EIXO == "📝 Anamnese":
-    tabs[0] = _subtabs[0]   # Queixa/HDA/IS + antecedentes/hábitos já estruturados no bloco original
+    tabs[0] = _subtabs[0]   # Queixa/HDA/IS/medicamentos em uso
+    tabs[11] = _subtabs[1]  # Antecedentes
+    tabs[12] = _subtabs[2]  # Hábitos de vida
+    tabs[13] = _subtabs[3]  # Condições socioeconômicas
     tabs[4] = _subtabs[4]   # Vacinação
 elif _EIXO == "🩺 Exame físico":
+    tabs[14] = _subtabs[0]  # Sinais vitais e antropometria
     tabs[1] = _subtabs[1]   # Exame geral e segmentar
     tabs[2] = _subtabs[2]   # Crescimento
     tabs[3] = _subtabs[3]   # Desenvolvimento
@@ -887,8 +958,9 @@ def _render_block(idx: int) -> bool:
 if _render_block(0):
     with tabs[0]:
         st.markdown("<span id='eixo-anamnese'></span>", unsafe_allow_html=True)
-        st.subheader("📝 Anamnese estruturada")
-    
+        st.subheader("📝 Queixa principal, HDA e interrogatório sintomatológico")
+        st.caption("Registre a demanda principal do responsável e selecione achados por sistema. Os dados alimentam Diagnósticos e Plano.")
+
         st.markdown("### Identificação do atendimento")
         id1, id2, id3 = st.columns(3)
         with id1:
@@ -897,7 +969,26 @@ if _render_block(0):
             data_nasc = st.date_input("Data de nascimento", key="data_nasc", format="DD/MM/YYYY")
         with id3:
             data_aval = st.date_input("Data da consulta", key="data_aval", format="DD/MM/YYYY")
-    
+
+        st.markdown("### Queixa principal / HDA")
+        queixa = st.text_area("Queixa principal e história da doença atual", placeholder="Ex.: responsável refere tosse há 3 dias, febre...", height=130, key="queixa_hda")
+
+        st.markdown("### Interrogatório sintomatológico segmentar")
+        inter = {}
+        cols = st.columns(2)
+        for i, (seg, ops) in enumerate(INTERROGATORIO_SEGMENTAR.items()):
+            with cols[i % 2]:
+                inter[seg] = selecionar_opcoes(seg, ops, key=f"is_{seg}")
+        inter_obs = st.text_area("Complemento do interrogatório sintomatológico", height=70, key="inter_obs")
+
+        meds = render_lista_medicamentos("meduso", "Medicamentos em uso / suplementações profiláticas", idade_texto(idade_dias), peso, maximo=10)
+        atualizar_passagem_consulta(queixa_hda=queixa, interrogatorio={**inter, "complemento": inter_obs}, medicamentos_uso=meds)
+
+if _render_block(11):
+    with tabs[11]:
+        st.subheader("📚 Antecedentes")
+        st.caption("Dados ao nascer e antecedentes pessoais, maternos, perinatais, patológicos e familiares ficam concentrados aqui.")
+
         st.markdown("### Antecedentes pessoais — nascimento")
         nb1, nb2, nb3 = st.columns(3)
         with nb1:
@@ -915,30 +1006,16 @@ if _render_block(0):
             apgar1 = st.number_input("Apgar 1º minuto", 0, 10, key="apgar1", step=1)
         with na2:
             apgar5 = st.number_input("Apgar 5º minuto", 0, 10, key="apgar5", step=1)
-        st.caption("Dados ao nascer ficam registrados nos antecedentes pessoais e alimentam classificação de IG/peso, ferro profilático e idade corrigida.")
-    
-        st.markdown("## Anamnese")
-        queixa = st.text_area("Queixa principal / História da doença atual", placeholder="Ex.: responsável refere tosse há 3 dias, febre...", height=120)
-    
-        st.markdown("### Interrogatório sintomatológico segmentar")
-        inter = {}
-        cols = st.columns(2)
-        for i, (seg, ops) in enumerate(INTERROGATORIO_SEGMENTAR.items()):
-            with cols[i % 2]:
-                inter[seg] = selecionar_opcoes(seg, ops, key=f"is_{seg}")
-        inter_obs = st.text_area("Complemento do interrogatório sintomatológico", height=70)
-    
-        meds = render_lista_medicamentos("meduso", "Medicamentos em uso / suplementações profiláticas", idade_texto(idade_dias), peso, maximo=10)
-    
+
         st.markdown("### Antecedentes maternos, gestacionais e obstétricos")
         g1,g2,g3,g4 = st.columns(4)
-        with g1: gestas = st.number_input("Gestações (G)", 0, 20, 1, step=1)
-        with g2: partos_normais = st.number_input("Partos normais (PN)", 0, 20, 0, step=1)
-        with g3: partos_cesareos = st.number_input("Partos cesáreos (PC)", 0, 20, 0, step=1)
-        with g4: abortos = st.number_input("Abortos (A)", 0, 20, 0, step=1)
+        with g1: gestas = st.number_input("Gestações (G)", 0, 20, 1, step=1, key="gestas")
+        with g2: partos_normais = st.number_input("Partos normais (PN)", 0, 20, 0, step=1, key="partos_normais")
+        with g3: partos_cesareos = st.number_input("Partos cesáreos (PC)", 0, 20, 0, step=1, key="partos_cesareos")
+        with g4: abortos = st.number_input("Abortos (A)", 0, 20, 0, step=1, key="abortos")
         paridade = f"G{gestas} PN{partos_normais} PC{partos_cesareos} A{abortos}"
-    
-        n_filhos = st.number_input("Número de filhos vivos", 0, 20, 0, step=1)
+
+        n_filhos = st.number_input("Número de filhos vivos", 0, 20, 0, step=1, key="n_filhos")
         filhos = []
         if n_filhos:
             with st.expander("Filhos vivos — sexo e idade", expanded=False):
@@ -948,7 +1025,7 @@ if _render_block(0):
                     with fc2: idade_f = st.text_input("Idade", key=f"filho_idade_{i}", placeholder="Ex.: 7a; 3m")
                     with fc3: obs_f = st.text_input("Observação", key=f"filho_obs_{i}")
                     filhos.append({"sexo": sx_f, "idade": idade_f, "observacao": obs_f})
-    
+
         ant_mat_inf = selecionar_opcoes("Infecções/intercorrências infecciosas maternas", DOENCAS_MATERNAS_INFECCIOSAS, key="ant_mat_inf")
         ant_mat_clin = selecionar_opcoes("Doenças/comorbidades/intercorrências clínicas/obstétricas maternas", DOENCAS_MATERNAS_CLINICAS, key="ant_mat_clin")
         ant_mat_det = {}
@@ -965,12 +1042,12 @@ if _render_block(0):
                 ctrl = st.selectbox("Controle durante a gestação", ["adequado", "parcial", "inadequado", "não sabe"], key=f"clin_ctrl_{cond}")
                 obs = st.text_input("Observação", key=f"clin_obs_{cond}")
                 ant_mat_det[cond] = {"controle": ctrl, "observacao": obs}
-    
+
         meds_gest = render_lista_medicamentos("medgest", "Medicamentos maternos usados na gestação", idade_texto(idade_dias), peso, maximo=8)
         sups_gest = render_lista_medicamentos("supgest", "Suplementações maternas na gestação", idade_texto(idade_dias), peso, maximo=6)
         vac_gest = selecionar_opcoes("Vacinação na gestação", VACINAS_GESTACAO, key="vac_gest")
-        vac_gest_obs = st.text_input("Observações sobre vacinação gestacional")
-    
+        vac_gest_obs = st.text_input("Observações sobre vacinação gestacional", key="vac_gest_obs")
+
         st.markdown("### Antecedentes perinatais e triagens neonatais")
         ant_peri = selecionar_opcoes("Intercorrências perinatais/neonatais", INTERCORRENCIAS_PERINATAIS, key="ant_peri")
         peri_det = {}
@@ -994,7 +1071,7 @@ if _render_block(0):
                 triagens[teste] = val
                 if val not in ("normal", "não sabe informar"):
                     triagens[teste + " — detalhe"] = st.text_input(f"Detalhe: {teste}", key=f"triagem_det_{teste}")
-    
+
         st.markdown("### Antecedentes patológicos e familiares")
         ant_pat = selecionar_opcoes("Antecedentes patológicos", ANTECEDENTES_PATOLOGICOS, key="ant_pat")
         det_pat = {}
@@ -1003,68 +1080,72 @@ if _render_block(0):
                 det_pat[item] = st.text_input(f"Detalhar {item}: motivo, data, duração/procedimento", key=f"det_{item}")
         meds_pat = render_lista_medicamentos("medpat", "Medicamentos já utilizados para antecedentes patológicos", idade_texto(idade_dias), peso, maximo=8)
         ant_fam = selecionar_opcoes("Antecedentes familiares", ANTECEDENTES_FAMILIARES, key="ant_fam")
-    
-        st.markdown("### Hábitos de vida")
+
+        atualizar_passagem_consulta(
+            paridade=paridade,
+            filhos={"numero": n_filhos, "lista": filhos},
+            antecedentes_maternos={"infecciosos": ant_mat_inf, "clinicos_obstetricos": ant_mat_clin, "detalhes": ant_mat_det},
+            medicamentos_gestacao=meds_gest,
+            suplementacoes_gestacao=sups_gest,
+            vacinacao_gestacao={"selecionadas": vac_gest, "obs": vac_gest_obs},
+            antecedentes_perinatais={"selecionados": ant_peri, "detalhes": peri_det},
+            triagens_neonatais=triagens,
+            antecedentes_patologicos={"selecionados": ant_pat, "detalhes": det_pat, "medicamentos_previos": meds_pat},
+            antecedentes_familiares=ant_fam,
+        )
+
+if _render_block(12):
+    with tabs[12]:
+        st.subheader("🍽️ Hábitos de vida")
         hab1,hab2 = st.columns(2)
         with hab1:
             alimentacao = selecionar_opcoes("Alimentação/aleitamento atual", TIPOS_ALEITAMENTO, key="alimentacao")
-            # Histórico de AME permanece relevante mesmo após a introdução alimentar,
-            # pois influencia a análise de ferro profilático e risco de anemia.
             if idade_meses_cron >= 6:
-                historico_ame = st.selectbox("Histórico de AME até 6 meses", HISTORICO_AME[1:], help="Use para saber se a criança recebeu aleitamento materno exclusivo até 6 meses, mesmo que já esteja em alimentação complementar.")
+                historico_ame = st.selectbox("Histórico de AME até 6 meses", HISTORICO_AME[1:], key="historico_ame", help="Mantido mesmo após introdução alimentar por influenciar ferro/anemia.")
             else:
-                historico_ame = st.selectbox("Histórico/condição atual de AME", ["AME em curso", "não está em AME", "não sabe informar"], help="Em menores de 6 meses, indica se o aleitamento materno exclusivo está em curso.")
+                historico_ame = st.selectbox("Histórico/condição atual de AME", ["AME em curso", "não está em AME", "não sabe informar"], key="historico_ame_menor6")
             lacteo_precoce = ""
             if historico_ame in ("AME interrompido antes de 6 meses", "não esteve em AME", "não está em AME"):
-                lacteo_precoce = st.selectbox("Principal substituto lácteo antes dos 6 meses", ALIMENTO_LACTEO_ANTES_6M[1:])
+                lacteo_precoce = st.selectbox("Principal substituto lácteo antes dos 6 meses", ALIMENTO_LACTEO_ANTES_6M[1:], key="lacteo_precoce")
             formula = ""
             if "fórmula infantil exclusiva" in alimentacao or "aleitamento misto" in alimentacao:
-                formula = st.text_input("Fórmula atual: marca/tipo, volume, frequência, diluição")
+                formula = st.text_input("Fórmula atual: marca/tipo, volume, frequência, diluição", key="formula_atual")
             sono = selecionar_opcoes("Sono", SONO, key="sono")
             telas = selecionar_um("Telas", ["não usa", "uso ocasional", "< 1h/dia", "1–2h/dia", "> 2h/dia", "não informado"], key="telas")
         with hab2:
             fezes = selecionar_opcoes("Fezes — queixas/padrão", PADRAO_FEZES, key="fezes")
-            bristol = st.selectbox("Escala de Bristol", BRISTOL_FEZES, format_func=titulo_opcao)
-            freq_fezes = st.text_input("Frequência evacuatória", value="0", help="Ex.: 1x/dia, 3x/semana, 5x/dia")
+            bristol = st.selectbox("Escala de Bristol", BRISTOL_FEZES, key="bristol", format_func=titulo_opcao)
+            freq_fezes = st.text_input("Frequência evacuatória", value="0", key="freq_fezes", help="Ex.: 1x/dia, 3x/semana, 5x/dia")
             urina = selecionar_opcoes("Micção/diurese", PADRAO_URINA, key="urina")
-            freq_urina = st.text_input("Frequência urinária/diurese", value="0", help="Ex.: 6 fraldas/dia, 5 micções/dia")
+            freq_urina = st.text_input("Frequência urinária/diurese", value="0", key="freq_urina", help="Ex.: 6 fraldas/dia, 5 micções/dia")
             desfralde = selecionar_um("Desfralde/controle esfincteriano", ["não se aplica pela idade", "não iniciado", "em treinamento", "diurno adquirido", "diurno e noturno adquiridos", "regressão/perdas"], key="desfralde")
-            atividade = st.text_input("Atividade física/brincadeiras/creche/escola")
-        ame_adequado_para_ferro = (historico_ame in ("esteve em AME até 6 meses", "AME em curso"))
-        fatores_alimentares_anemia_auto = []
-        if lacteo_precoce in ("leite de vaca", "leite de cabra/outro leite animal", "misto com leite de vaca"):
-            fatores_alimentares_anemia_auto.append("leite animal antes de 6 meses/antes de 12 meses")
+            atividade = st.text_input("Atividade física/brincadeiras/creche/escola", key="atividade")
+        ame_ok = (historico_ame in ("esteve em AME até 6 meses", "AME em curso"))
+        fat_auto = []
+        if lacteo_precoce and "leite" in lacteo_precoce.lower() and "fórmula" not in lacteo_precoce.lower():
+            fat_auto.append("leite animal antes de 6 meses/antes de 12 meses")
         elif historico_ame in ("AME interrompido antes de 6 meses", "não esteve em AME", "não está em AME"):
-            fatores_alimentares_anemia_auto.append("AME ausente/interrompido antes de 6 meses — avaliar dieta/fórmula fortificada")
-    
-        st.markdown("### Condições socioeconômicas")
+            fat_auto.append("AME ausente/interrompido antes de 6 meses — avaliar dieta/fórmula fortificada")
+        st.session_state["ame_adequado_para_ferro"] = ame_ok
+        st.session_state["fatores_alimentares_anemia_auto"] = fat_auto
+        atualizar_passagem_consulta(habitos={"alimentacao_atual": alimentacao, "historico_ame": historico_ame, "substituto_lacteo_precoce": lacteo_precoce, "formula": formula, "sono": sono, "telas": telas, "fezes": fezes, "frequencia_fezes": freq_fezes, "bristol": bristol, "urina": urina, "frequencia_urina": freq_urina, "desfralde": desfralde, "atividade": atividade})
+
+if _render_block(13):
+    with tabs[13]:
+        st.subheader("🏠 Condições socioeconômicas")
         socio = selecionar_opcoes("Condições socioeconômicas/moradia", CONDICOES_MORADIA, key="socio")
         sc1,sc2,sc3 = st.columns(3)
-        with sc1: tipo_casa = st.selectbox("Tipo de moradia", ["não informado", "casa", "apartamento", "cômodo", "zona rural", "outro"])
-        with sc2: comodos = st.number_input("Número de cômodos", 0, 20, 0, step=1)
-        with sc3: moradores = st.number_input("Número de moradores", 0, 30, 0, step=1)
-        animais = st.text_input("Animais domésticos")
-        coabit = st.text_input("Coabitantes/cuidadores principais")
+        with sc1: tipo_casa = st.selectbox("Tipo de moradia", ["não informado", "casa", "apartamento", "cômodo", "zona rural", "outro"], key="tipo_casa")
+        with sc2: comodos = st.number_input("Número de cômodos", 0, 20, 0, step=1, key="comodos")
+        with sc3: moradores = st.number_input("Número de moradores", 0, 30, 0, step=1, key="moradores")
+        animais = st.text_input("Animais domésticos", key="animais")
+        coabit = st.text_input("Coabitantes/cuidadores principais", key="coabit")
+        atualizar_passagem_consulta(socioeconomico={"moradia": socio, "tipo_casa": tipo_casa, "comodos": comodos, "moradores": moradores, "animais": animais, "coabitantes": coabit})
 
-        consulta_dados = {
-            "queixa_hda": queixa, "interrogatorio": {**inter, "complemento": inter_obs}, "medicamentos_uso": meds,
-            "paridade": paridade, "filhos": {"numero": n_filhos, "lista": filhos},
-            "antecedentes_maternos": {"infecciosos": ant_mat_inf, "clinicos_obstetricos": ant_mat_clin, "detalhes": ant_mat_det},
-            "medicamentos_gestacao": meds_gest, "suplementacoes_gestacao": sups_gest, "vacinacao_gestacao": {"selecionadas": vac_gest, "obs": vac_gest_obs},
-            "antecedentes_perinatais": {"selecionados": ant_peri, "detalhes": peri_det}, "triagens_neonatais": triagens,
-            "antecedentes_patologicos": {"selecionados": ant_pat, "detalhes": det_pat, "medicamentos_previos": meds_pat}, "antecedentes_familiares": ant_fam,
-            "habitos": {"alimentacao_atual": alimentacao, "historico_ame": historico_ame, "substituto_lacteo_precoce": lacteo_precoce, "formula": formula, "sono": sono, "telas": telas, "fezes": fezes, "frequencia_fezes": freq_fezes, "bristol": bristol, "urina": urina, "frequencia_urina": freq_urina, "desfralde": desfralde, "atividade": atividade},
-            "socioeconomico": {"moradia": socio, "tipo_casa": tipo_casa, "comodos": comodos, "moradores": moradores, "animais": animais, "coabitantes": coabit},
-        }
-        st.session_state["passagem_consulta"] = consulta_dados
-    
-    
-if _render_block(1):
-    with tabs[1]:
+if _render_block(14):
+    with tabs[14]:
         st.markdown("<span id='eixo-exame-fisico'></span>", unsafe_allow_html=True)
-        st.markdown("## Exame físico")
-    
-        st.markdown("### Geral — sinais vitais e antropometria atual")
+        st.subheader("🩺 Sinais vitais e antropometria")
         v1, v2, v3, v4, v5 = st.columns(5)
         with v1:
             temp = st.number_input("Temp. (°C)", 34.0, 42.0, key="temp", step=0.1)
@@ -1084,8 +1165,18 @@ if _render_block(1):
         with a3:
             pc = st.number_input("Perímetro cefálico atual (cm)", 20.0, 70.0, key="pc", step=0.1)
         with a4:
-            st.metric("IMC calculado", f"{imc:.1f}")
-        st.caption("Sinais vitais e antropometria ficam no exame físico, como no fluxo de atendimento clínico.")
+            imc_atual = peso / ((estatura/100)**2) if estatura else 0
+            st.metric("IMC calculado", f"{imc_atual:.1f}")
+        atualizar_passagem_exame(
+            sinais_vitais=f"T {temp:.1f}°C; FC {fc} bpm; FR {fr} irpm; SpO₂ {spo2}%; PA {pa or 'não aferida'}",
+            antropometria=f"Peso {peso:.1f} kg; estatura {estatura:.1f} cm; PC {pc:.1f} cm; IMC {imc_atual:.1f}"
+        )
+
+if _render_block(1):
+    with tabs[1]:
+        st.markdown("<span id='eixo-exame-fisico'></span>", unsafe_allow_html=True)
+        st.subheader("🧑‍⚕️ Exame geral e segmentar")
+        st.caption("Clique no campo de cada segmento para selecionar achados. A descrição final do segmento permanece editável e pré-preenchida com o normal.")
         geral = selecionar_opcoes(
             "Geral / ectoscopia",
             ECTOSCOPIA,
@@ -1343,6 +1434,8 @@ if _render_block(5):
             if prematuro: defaults.append("Prematuridade")
             if peso_nasc_g < 2500: defaults.append("Baixo peso ao nascer (< 2.500 g)")
             fat_crianca_sel = selecionar_opcoes("Fatores da criança para anemia", riscos["crianca"], key="fat_crianca_anemia", default=defaults)
+        fatores_alimentares_anemia_auto = st.session_state.get("fatores_alimentares_anemia_auto", [])
+        ame_adequado_para_ferro = st.session_state.get("ame_adequado_para_ferro", True)
         fat_crianca = list(dict.fromkeys(list(fat_crianca_sel) + fatores_alimentares_anemia_auto))
         if fatores_alimentares_anemia_auto:
             st.warning("Fator alimentar acrescentado automaticamente à análise de anemia/ferro: " + "; ".join(fatores_alimentares_anemia_auto))
@@ -1364,7 +1457,8 @@ if _render_block(5):
         vit_d=calcular_vitamina_d_sbp(idade_meses_float, peso, prematuro, peso_nasc_g, fat_d)
         fat_b12=selecionar_opcoes("Fatores de risco para deficiência de B12", fatores_risco_vitamina_b12(), key="fat_b12")
         st.markdown(f"<div class='soft-card'><div class='soft-title'>Vitamina D</div><p><b>Dose:</b> {vit_d['dose']}</p><p>{vit_d['orientacao']}</p><div class='prescricao'>{vit_d['prescricao']}</div></div>", unsafe_allow_html=True)
-        st.session_state["passagem_suplementacao"] = {"resumo": [f"Ferro: {rec['protocolo']} — {rec['resumo']} — {rec['dose_mg_dia']:.1f} mg/dia", f"Vitamina A: {vit_a['dose']} — {'indicada' if vit_a['indicada'] else 'conferir critérios'}", f"Vitamina D: {vit_d['dose']}", f"B12: {'risco presente' if fat_b12 else 'sem fatores de risco selecionados'}"], "fatores_risco": {"anemia_crianca": fat_crianca, "anemia_maternos": fat_maternos, "vitamina_d": fat_d, "b12": fat_b12}, "historico_ame": historico_ame, "substituto_lacteo_precoce": lacteo_precoce}
+        hab_supl = st.session_state.get("passagem_consulta", {}).get("habitos", {})
+        st.session_state["passagem_suplementacao"] = {"resumo": [f"Ferro: {rec['protocolo']} — {rec['resumo']} — {rec['dose_mg_dia']:.1f} mg/dia", f"Vitamina A: {vit_a['dose']} — {'indicada' if vit_a['indicada'] else 'conferir critérios'}", f"Vitamina D: {vit_d['dose']}", f"B12: {'risco presente' if fat_b12 else 'sem fatores de risco selecionados'}"], "fatores_risco": {"anemia_crianca": fat_crianca, "anemia_maternos": fat_maternos, "vitamina_d": fat_d, "b12": fat_b12}, "historico_ame": hab_supl.get("historico_ame", "não informado"), "substituto_lacteo_precoce": hab_supl.get("substituto_lacteo_precoce", "")}
     
 if _render_block(6):
     with tabs[6]:
@@ -1410,48 +1504,8 @@ if _render_block(8):
                 dentes_mapa = selecionar_odontograma_por_imagem(key_suffix="global")
                 st.session_state["odontograma_alteracoes_mapa"] = dentes_mapa
     
-    
-    
-    def _flatten_for_text(obj, prefix=""):
-        itens = []
-        if isinstance(obj, dict):
-            for k, v in obj.items():
-                itens.extend(_flatten_for_text(v, f"{prefix}{k}: "))
-        elif isinstance(obj, list):
-            for v in obj:
-                itens.extend(_flatten_for_text(v, prefix))
-        else:
-            txt = str(obj).strip()
-            if txt and txt.lower() not in ("não", "nao", "não informado", "normal", "0", "[]", "{}", "none"):
-                itens.append(prefix + txt)
-        return itens
-    
-    
-    def _problemas_sugeridos():
-        problemas = []
-        cres = st.session_state.get("passagem_crescimento", {}).get("resumos", [])
-        for r in cres:
-            if not any(ok in r.lower() for ok in ["adequado", "eutrofia", "normal"]):
-                problemas.append({"titulo": "Alteração ou atenção no crescimento", "achados": [r], "protocolo": "Crescimento/nutrição"})
-        dev = st.session_state.get("passagem_desenvolvimento", {})
-        if dev.get("pendentes"):
-            problemas.append({"titulo": "Marco do desenvolvimento ausente/não verificado", "achados": dev.get("pendentes", [])[:8], "protocolo": "Desenvolvimento infantil"})
-        vac = st.session_state.get("passagem_vacinas", {}).get("atrasadas", [])
-        if vac:
-            problemas.append({"titulo": "Atraso vacinal", "achados": vac[:12], "protocolo": "Imunizações/PNI"})
-        sup = st.session_state.get("passagem_suplementacao", {})
-        for k, vals in sup.get("fatores_risco", {}).items():
-            if vals:
-                problemas.append({"titulo": f"Fatores de risco — {k.replace('_',' ')}", "achados": vals[:8], "protocolo": "Suplementação/triagem nutricional"})
-        amb = st.session_state.get("passagem_ambulatorio", {})
-        if amb.get("protocolo"):
-            problemas.append({"titulo": amb.get("protocolo"), "achados": [amb.get("classificacao", "")], "protocolo": amb.get("protocolo")})
-        queixa = st.session_state.get("passagem_consulta", {}).get("queixa_hda", "")
-        if queixa:
-            problemas.insert(0, {"titulo": "Queixa principal/HDA", "achados": [queixa], "protocolo": "Vincular a protocolo ambulatorial se houver"})
-        return problemas
-    
-    
+
+
 def _render_diagnosticos():
     st.markdown("<span id='eixo-diagnosticos'></span>", unsafe_allow_html=True)
     st.subheader("🧩 Diagnósticos, raciocínio clínico e lista de problemas")
