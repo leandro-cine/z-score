@@ -241,6 +241,27 @@ def render_linfo_3d():
     color:var(--text-muted,#64748b);
     font-size:.86rem;
 }
+
+    /* ===== LAYOUT PEC/e-SUS APS ===== */
+    .pec-side-brand { display:flex; align-items:center; gap:.75rem; padding:.85rem .7rem; border-radius:16px; background:linear-gradient(135deg, rgba(15,118,110,.14), rgba(14,165,233,.08)); border:1px solid var(--border); margin:.4rem 0 1rem; }
+    .pec-side-logo { width:42px; height:42px; border-radius:12px; display:flex; align-items:center; justify-content:center; background:var(--accent); color:white; font-weight:950; letter-spacing:.02em; }
+    .pec-sidebar-menu { display:flex; flex-direction:column; gap:.4rem; }
+    .pec-sidebar-menu a { display:flex; align-items:center; gap:.55rem; padding:.72rem .8rem; border-radius:14px; text-decoration:none!important; color:var(--text)!important; border:1px solid transparent; background:rgba(148,163,184,.08); font-weight:800; }
+    .pec-sidebar-menu a:hover { border-color:var(--accent); background:color-mix(in srgb, var(--accent) 12%, transparent); }
+    .pec-workspace-title { display:flex; justify-content:space-between; align-items:center; gap:1rem; padding:1rem 1.15rem; border-radius:22px; border:1px solid var(--border); background:var(--card); box-shadow:var(--shadow); margin:.45rem 0 1rem; }
+    .pec-workspace-title h2 { margin:.2rem 0 .1rem; font-size:1.55rem; color:var(--accent)!important; }
+    .pec-workspace-title p { margin:0; color:var(--muted); }
+    .pec-badge { display:inline-flex; align-items:center; gap:.35rem; border-radius:999px; padding:.22rem .62rem; font-size:.78rem; font-weight:900; color:var(--accent); background:var(--chip); border:1px solid var(--border); }
+    .pec-axis-ribbon { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:.75rem; margin:.35rem 0 1rem; }
+    .pec-axis-ribbon a { border:1px solid var(--border); background:var(--card); border-radius:18px; padding:.8rem .85rem; text-decoration:none!important; color:var(--text)!important; box-shadow:0 8px 20px rgba(15,23,42,.06); display:grid; grid-template-columns:auto 1fr; column-gap:.6rem; align-items:center; }
+    .pec-axis-ribbon span { font-size:1.15rem; grid-row:1 / span 2; }
+    .pec-axis-ribbon b { color:var(--accent); font-size:.94rem; }
+    .pec-axis-ribbon small { color:var(--muted); line-height:1.25; }
+    div[data-testid="stTabs"] [data-baseweb="tab-list"] { gap:.35rem; background:rgba(148,163,184,.08); border:1px solid var(--border); border-radius:18px; padding:.35rem; }
+    div[data-testid="stTabs"] [data-baseweb="tab"] { border-radius:14px; padding:.58rem .82rem; font-weight:850; color:var(--text)!important; }
+    div[data-testid="stTabs"] [aria-selected="true"] { background:var(--card)!important; color:var(--accent)!important; box-shadow:0 6px 14px rgba(15,23,42,.08); }
+    @media (max-width: 860px) { .pec-axis-ribbon { grid-template-columns:1fr 1fr; } .pec-workspace-title { padding:.85rem; } .top-panel { top:.6rem; } .block-container { padding-top:1.2rem; } }
+    @media (max-width: 540px) { .pec-axis-ribbon { grid-template-columns:1fr; } .pec-axis-ribbon small { display:none; } }
 </style>
           <div class="scene"><div class="body">
             <div class="ear l"></div><div class="ear r"></div><div class="head"></div><div class="neck"></div><div class="shoulders"></div>
@@ -280,7 +301,9 @@ def render_dental_3d(denticao: str):
         .tooth{{width:30px;height:38px;border-radius:45% 45% 35% 35%;background:linear-gradient(145deg,#fff,#e5e7eb);border:1px solid #cbd5e1;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:#475569;box-shadow:inset -3px -5px 8px rgba(100,116,139,.15),0 3px 8px rgba(15,23,42,.18)}}
         .lower .tooth{{border-radius:35% 35% 45% 45%}}
         .label{{text-align:center;font-size:12px;font-weight:800;color:#7f1d1d;margin:4px}}
-      </style>
+  
+
+    </style>
       <div class='label'>Odontograma visual — {denticao.title()}</div>
       <div class='mouth'><div class='arch upper'>{row_html(sup)}</div><div class='arch lower'>{row_html(inf)}</div></div>
     </div>
@@ -465,6 +488,21 @@ def css(sexo: str):
     .vaccine-modal-card { border-radius:16px!important; border-top:5px solid var(--pec-green)!important; }
     .map-card img { border-radius:12px!important; border:1px solid var(--pec-line)!important; }
     @media (prefers-color-scheme: dark) { .hero,.top-panel,.soft-card,.risk-box,.timeline-card,.vaccine-board,.map-card,.modern-select-card,div[data-testid="stExpander"] details,div[data-testid="stTabs"] [data-baseweb="tab-list"] { background:var(--pec-panel)!important; } .hero h1,.soft-title,.vaccine-board-title,.vaccine-age-title,.modern-select-label { color:var(--pec-green-2)!important; } .hero p,.small-muted,.modern-select-value { color:#dbeafe!important; } }
+
+    /* ===== DIAGRAMAÇÃO PEC/e-SUS APS — EIXOS CLÍNICOS ===== */
+    .pec-axis-ribbon {{ display:grid; grid-template-columns:repeat(4, minmax(0,1fr)); gap:.65rem; margin:.65rem 0 1rem; }}
+    .pec-axis-ribbon a {{ text-decoration:none!important; display:flex; flex-direction:column; gap:.16rem; padding:.82rem .9rem; border:1px solid var(--pec-line, var(--border)); border-radius:14px; background:var(--pec-panel, var(--card)); box-shadow:0 4px 14px rgba(15,23,42,.05); color:var(--text)!important; }}
+    .pec-axis-ribbon a span {{ font-size:1.25rem; }}
+    .pec-axis-ribbon a b {{ color:var(--pec-green, var(--accent))!important; font-size:.98rem; }}
+    .pec-axis-ribbon a small {{ color:var(--muted)!important; line-height:1.25; }}
+    .pec-axis-ribbon a:hover {{ border-color:var(--pec-green, var(--accent)); transform:translateY(-1px); }}
+    .pec-side-nav {{ display:flex; flex-direction:column; gap:.45rem; }}
+    .pec-side-nav a {{ display:block; padding:.62rem .72rem; border-radius:12px; border:1px solid var(--pec-line, var(--border)); background:var(--pec-panel, var(--card)); color:var(--text)!important; text-decoration:none!important; font-weight:800; }}
+    .pec-side-nav a:hover {{ background:var(--pec-soft, var(--chip)); color:var(--pec-green, var(--accent))!important; }}
+    .pec-problem-card {{ border:1px solid var(--pec-line, var(--border)); border-left:6px solid var(--pec-green, var(--accent)); border-radius:14px; padding:.9rem; background:var(--pec-panel, var(--card)); margin:.55rem 0; box-shadow:0 3px 12px rgba(15,23,42,.05); }}
+    .pec-problem-card h4 {{ margin:.1rem 0 .35rem; color:var(--pec-green, var(--accent))!important; }}
+    .pec-map-node {{ display:inline-block; padding:.32rem .55rem; margin:.18rem; border-radius:999px; border:1px solid var(--pec-line, var(--border)); background:var(--pec-soft, var(--chip)); color:var(--text)!important; font-size:.85rem; }}
+    @media (max-width: 760px) {{ .pec-axis-ribbon {{ grid-template-columns:1fr; }} }}
     </style>
     """
     return template.replace("__ACCENT__", accent)
@@ -626,7 +664,39 @@ def render_lista_medicamentos(prefix: str, titulo: str, idade_txt: str, peso_kg:
 
 tabelas = carregar_tabelas()
 
-st.markdown("<div class='hero'><h1>👶 Puericultura Digital</h1><p>Análise clínica por idade, sexo, crescimento, desenvolvimento, imunizações, suplementação, orientações e passagem de caso.</p></div>", unsafe_allow_html=True)
+st.markdown("<div class='hero'><h1>👶 Puericultura Digital</h1><p>Prontuário de puericultura estruturado por eixos: anamnese, exame físico, diagnósticos e plano terapêutico.</p></div>", unsafe_allow_html=True)
+
+# Navegação lateral fixa/institucional inspirada no fluxo do PEC/e-SUS APS.
+with st.sidebar:
+    st.markdown("""
+    <div class='pec-side-brand'>
+      <div class='pec-side-logo'>SUS</div>
+      <div><b>Puericultura</b><br><small>Prontuário orientado por eixos</small></div>
+    </div>
+    """, unsafe_allow_html=True)
+    st.caption("Navegação rápida")
+    st.markdown("""
+    <div class='pec-sidebar-menu'>
+      <a href='#eixo-anamnese'>📝 <span>Anamnese</span></a>
+      <a href='#eixo-exame-fisico'>🩺 <span>Exame físico</span></a>
+      <a href='#eixo-diagnosticos'>🧩 <span>Diagnósticos</span></a>
+      <a href='#eixo-plano'>📋 <span>Plano terapêutico</span></a>
+    </div>
+    """, unsafe_allow_html=True)
+    st.divider()
+    st.caption("Preencha os dados na ordem do atendimento. A passagem de caso usa tudo o que estiver preenchido.")
+
+st.markdown(
+    """
+    <div class='pec-axis-ribbon'>
+        <a href='#eixo-anamnese'><span>📝</span><b>Anamnese</b><small>Queixa, HDA, antecedentes, hábitos e vacinação</small></a>
+        <a href='#eixo-exame-fisico'><span>🩺</span><b>Exame físico</b><small>Geral, antropometria, crescimento e desenvolvimento</small></a>
+        <a href='#eixo-diagnosticos'><span>🧩</span><b>Diagnósticos</b><small>Classificações, raciocínio e lista de problemas</small></a>
+        <a href='#eixo-plano'><span>📋</span><b>Plano terapêutico</b><small>Condutas, orientações, prescrição e retorno</small></a>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
 
 with st.expander("🧾 Identificação, nascimento e exame físico objetivo", expanded=True):
     st.markdown("### Identificação")
@@ -745,10 +815,52 @@ if tabelas is None:
 
 faixa, rx = faixa_x_por_idade(idade_meses_float)
 
-tabs = st.tabs(["🩺 Anamnese e exame", "📈 Crescimento", "🧠 Desenvolvimento", "💉 Imunizações", "💊 Ferro e vitaminas", "🩺 Ambulatório", "📝 Orientações", "🗺️ Mapas clínicos"])
+# =========================
+# Navegação clínica estilo PEC/e-SUS APS
+# Eixos superiores + menu lateral de acesso rápido.
+# As seções antigas foram reorganizadas sem remover funcionalidades.
+# =========================
+st.markdown("""
+<div class='pec-workspace-title'>
+  <div>
+    <span class='pec-badge'>PEC SUS · Puericultura</span>
+    <h2>Atendimento de puericultura</h2>
+    <p>Registro organizado por anamnese, exame físico, raciocínio diagnóstico e plano terapêutico.</p>
+  </div>
+</div>
+""", unsafe_allow_html=True)
+
+# Topo por eixo. Os containers são criados aqui e preenchidos abaixo.
+eixo_tabs = st.tabs(["📝 Anamnese", "🩺 Exame físico", "🧩 Diagnósticos", "📋 Plano terapêutico"])
+with eixo_tabs[0]:
+    _anam_tabs = st.tabs(["Queixa/HDA", "Antecedentes e hábitos", "Vacinação", "Suplementação"])
+with eixo_tabs[1]:
+    _exam_tabs = st.tabs(["Geral", "Crescimento", "Desenvolvimento", "Mapas clínicos"])
+with eixo_tabs[2]:
+    _diag_tabs = st.tabs(["Síntese e lista de problemas", "Ambulatório / investigação guiada"])
+with eixo_tabs[3]:
+    _plano_tabs = st.tabs(["Plano terapêutico", "Orientações", "Passagem de caso"])
+
+# Mapeamento para preservar a lógica já implementada abaixo.
+# 0 Anamnese | 1 Exame geral | 2 Crescimento | 3 Desenvolvimento | 4 Vacinação
+# 5 Ferro/vitaminas | 6 Ambulatório | 7 Orientações | 8 Mapas | 9 Diagnósticos | 10 Plano
+tabs = [
+    _anam_tabs[0],
+    _exam_tabs[0],
+    _exam_tabs[1],
+    _exam_tabs[2],
+    _anam_tabs[2],
+    _anam_tabs[3],
+    _diag_tabs[1],
+    _plano_tabs[1],
+    _exam_tabs[3],
+    _diag_tabs[0],
+    _plano_tabs[0],
+]
 
 with tabs[0]:
-    st.subheader("🩺 Anamnese estruturada e exame físico")
+    st.markdown("<span id='eixo-anamnese'></span>", unsafe_allow_html=True)
+    st.subheader("📝 Anamnese estruturada")
 
     st.markdown("## Anamnese")
     queixa = st.text_area("Queixa principal / História da doença atual", placeholder="Ex.: responsável refere tosse há 3 dias, febre...", height=120)
@@ -879,6 +991,9 @@ with tabs[0]:
     animais = st.text_input("Animais domésticos")
     coabit = st.text_input("Coabitantes/cuidadores principais")
 
+
+with tabs[1]:
+    st.markdown("<span id='eixo-exame-fisico'></span>", unsafe_allow_html=True)
     st.markdown("## Exame físico")
     geral = selecionar_opcoes(
         "Geral / ectoscopia",
@@ -1083,7 +1198,7 @@ with tabs[0]:
     st.session_state["passagem_consulta"] = consulta_dados
     st.session_state["passagem_exame"] = exame_dados
 
-with tabs[1]:
+with tabs[2]:
     st.subheader("📈 Crescimento antropométrico")
     st.caption("Antropometria integrada ao exame físico; aqui aparecem as curvas, z-scores, percentis e classificação.")
     growth_summaries = []
@@ -1098,7 +1213,7 @@ with tabs[1]:
             growth_summaries.append(resumo)
     st.session_state["passagem_crescimento"] = {"resumos": [f"{r['titulo']}: {r['classificacao']} (Z {r['z']}, P{r['percentil']})" for r in growth_summaries]}
 
-with tabs[2]:
+with tabs[3]:
     st.subheader("🧠 Desenvolvimento neuropsicomotor")
     atual, anterior, proxima, todas = obter_marcos_vigilancia(idade_meses_float, prematuro)
     st.markdown("<div class='timeline'>" + "".join(f"<div class='timeline-card {'current' if f['faixa']==atual['faixa'] else ''}'><span class='timeline-dot'></span><b>{f['faixa']}</b><br><span class='small-muted'>{'faixa atual' if f['faixa']==atual['faixa'] else 'vigilância'}</span></div>" for f in todas) + "</div>", unsafe_allow_html=True)
@@ -1125,7 +1240,7 @@ with tabs[2]:
     with c2: st.markdown(f"<div class='soft-card'><div class='soft-title'>🚀 Próximos marcos — {(proxima or atual)['faixa']}</div>{html_lista((proxima or atual)['proxima'])}</div>", unsafe_allow_html=True)
     st.session_state["passagem_desenvolvimento"] = {"resumo": f"{clas_dev}. {texto_dev}", "presentes": presentes, "pendentes": pendentes, "fatores": fatores_dev}
 
-with tabs[3]:
+with tabs[4]:
     st.subheader("💉 Imunizações")
     atrasadas, proximas = render_mapa_vacinal(idade_meses_float)
     c1,c2=st.columns(2)
@@ -1133,7 +1248,7 @@ with tabs[3]:
     with c2: st.markdown("<div class='risk-box'><div class='soft-title'>📅 Próximas imunizações</div>" + html_lista(proximas[:12]) + "</div>", unsafe_allow_html=True)
     st.session_state["passagem_vacinas"] = {"atrasadas": atrasadas, "proximas": proximas[:12]}
 
-with tabs[4]:
+with tabs[5]:
     st.subheader("💊 Ferro profilático e vitaminas")
     riscos = fatores_risco_anemia()
     c1,c2=st.columns(2)
@@ -1166,7 +1281,7 @@ with tabs[4]:
     st.markdown(f"<div class='soft-card'><div class='soft-title'>Vitamina D</div><p><b>Dose:</b> {vit_d['dose']}</p><p>{vit_d['orientacao']}</p><div class='prescricao'>{vit_d['prescricao']}</div></div>", unsafe_allow_html=True)
     st.session_state["passagem_suplementacao"] = {"resumo": [f"Ferro: {rec['protocolo']} — {rec['resumo']} — {rec['dose_mg_dia']:.1f} mg/dia", f"Vitamina A: {vit_a['dose']} — {'indicada' if vit_a['indicada'] else 'conferir critérios'}", f"Vitamina D: {vit_d['dose']}", f"B12: {'risco presente' if fat_b12 else 'sem fatores de risco selecionados'}"], "fatores_risco": {"anemia_crianca": fat_crianca, "anemia_maternos": fat_maternos, "vitamina_d": fat_d, "b12": fat_b12}, "historico_ame": historico_ame, "substituto_lacteo_precoce": lacteo_precoce}
 
-with tabs[5]:
+with tabs[6]:
     st.subheader("🩺 Protocolos ambulatoriais")
     if obter_protocolos_ambulatoriais:
         protos = obter_protocolos_ambulatoriais(); nome = st.selectbox("Protocolo", list(protos.keys()))
@@ -1187,12 +1302,12 @@ with tabs[5]:
     else:
         st.info("Arquivo protocolos_ambulatoriais.py não carregado.")
 
-with tabs[6]:
+with tabs[7]:
     st.subheader("📝 Orientações por idade e achados")
     for bloco in obter_orientacoes_detalhadas(idade_meses_float, prematuro):
         st.markdown(f"<div class='soft-card'><div class='soft-title'>{bloco['icone']} {bloco['titulo']}</div>{html_lista(bloco['itens'])}<p class='small-muted'><b>Conduta/orientação:</b> {bloco['conduta']}</p></div>", unsafe_allow_html=True)
 
-with tabs[7]:
+with tabs[8]:
     st.subheader("🗺️ Mapas clínicos clicáveis")
     st.caption("Use estes mapas como apoio para registrar linfonodos e alterações dentárias. As seleções entram na passagem de caso.")
     if selecionar_linfodos_por_imagem is None or selecionar_odontograma_por_imagem is None:
@@ -1207,6 +1322,108 @@ with tabs[7]:
             dentes_mapa = selecionar_odontograma_por_imagem(key_suffix="global")
             st.session_state["odontograma_alteracoes_mapa"] = dentes_mapa
 
+
+
+def _flatten_for_text(obj, prefix=""):
+    itens = []
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            itens.extend(_flatten_for_text(v, f"{prefix}{k}: "))
+    elif isinstance(obj, list):
+        for v in obj:
+            itens.extend(_flatten_for_text(v, prefix))
+    else:
+        txt = str(obj).strip()
+        if txt and txt.lower() not in ("não", "nao", "não informado", "normal", "0", "[]", "{}", "none"):
+            itens.append(prefix + txt)
+    return itens
+
+
+def _problemas_sugeridos():
+    problemas = []
+    cres = st.session_state.get("passagem_crescimento", {}).get("resumos", [])
+    for r in cres:
+        if not any(ok in r.lower() for ok in ["adequado", "eutrofia", "normal"]):
+            problemas.append({"titulo": "Alteração ou atenção no crescimento", "achados": [r], "protocolo": "Crescimento/nutrição"})
+    dev = st.session_state.get("passagem_desenvolvimento", {})
+    if dev.get("pendentes"):
+        problemas.append({"titulo": "Marco do desenvolvimento ausente/não verificado", "achados": dev.get("pendentes", [])[:8], "protocolo": "Desenvolvimento infantil"})
+    vac = st.session_state.get("passagem_vacinas", {}).get("atrasadas", [])
+    if vac:
+        problemas.append({"titulo": "Atraso vacinal", "achados": vac[:12], "protocolo": "Imunizações/PNI"})
+    sup = st.session_state.get("passagem_suplementacao", {})
+    for k, vals in sup.get("fatores_risco", {}).items():
+        if vals:
+            problemas.append({"titulo": f"Fatores de risco — {k.replace('_',' ')}", "achados": vals[:8], "protocolo": "Suplementação/triagem nutricional"})
+    amb = st.session_state.get("passagem_ambulatorio", {})
+    if amb.get("protocolo"):
+        problemas.append({"titulo": amb.get("protocolo"), "achados": [amb.get("classificacao", "")], "protocolo": amb.get("protocolo")})
+    queixa = st.session_state.get("passagem_consulta", {}).get("queixa_hda", "")
+    if queixa:
+        problemas.insert(0, {"titulo": "Queixa principal/HDA", "achados": [queixa], "protocolo": "Vincular a protocolo ambulatorial se houver"})
+    return problemas
+
+
+def _render_diagnosticos():
+    st.markdown("<span id='eixo-diagnosticos'></span>", unsafe_allow_html=True)
+    st.subheader("🧩 Diagnósticos, raciocínio clínico e lista de problemas")
+    st.caption("Compilado automático das classificações, achados relevantes e pendências. Use como mapa de raciocínio, não como diagnóstico definitivo.")
+    c1, c2 = st.columns(2)
+    with c1:
+        st.markdown("<div class='soft-card'><div class='soft-title'>📈 Crescimento</div>" + html_lista(st.session_state.get("passagem_crescimento", {}).get("resumos", [])) + "</div>", unsafe_allow_html=True)
+    with c2:
+        dev = st.session_state.get("passagem_desenvolvimento", {})
+        st.markdown("<div class='soft-card'><div class='soft-title'>🧠 Desenvolvimento</div><p>" + str(dev.get("resumo", "Não avaliado.")) + "</p>" + html_lista(dev.get("presentes", [])[:8]) + "</div>", unsafe_allow_html=True)
+
+    achados = []
+    achados += _flatten_for_text(st.session_state.get("passagem_consulta", {}).get("interrogatorio", {}))[:20]
+    achados += _flatten_for_text(st.session_state.get("passagem_exame", {}))[:20]
+    if achados:
+        with st.expander("Achados relevantes resgatados da anamnese e exame físico", expanded=False):
+            st.write("\n".join([f"- {a}" for a in achados[:35]]))
+
+    problemas = _problemas_sugeridos()
+    if not problemas:
+        st.info("Nenhum problema prioritário foi gerado automaticamente até o momento. Preencha anamnese, exame físico, crescimento, desenvolvimento, imunização e/ou protocolos.")
+    else:
+        for i, pbl in enumerate(problemas, start=1):
+            with st.expander(f"Problema {i}: {pbl['titulo']}", expanded=(i == 1)):
+                st.markdown(f"<div class='pec-problem-card'><h4>{pbl['titulo']}</h4><b>Achados associados</b>{html_lista(pbl.get('achados', []))}<b>Investigação/conduta vinculada</b><br><span class='pec-map-node'>{pbl.get('protocolo', 'Sem protocolo vinculado')}</span></div>", unsafe_allow_html=True)
+                if pbl.get("protocolo") == "Vincular a protocolo ambulatorial se houver":
+                    st.warning("Este problema ainda não está vinculado automaticamente a um protocolo do arsenal. Atualize protocolos_ambulatoriais.py se desejar investigação guiada específica.")
+    if st.session_state.get("usar_ia_passagem") and st.button("✨ Sugerir raciocínio diagnóstico com IA", use_container_width=True):
+        if gerar_passagem_caso_ia:
+            contexto = {"consulta": st.session_state.get("passagem_consulta", {}), "exame": st.session_state.get("passagem_exame", {}), "problemas": problemas}
+            texto = gerar_passagem_caso_ia({"contexto_diagnostico": contexto, "pedido": "Elabore raciocínio clínico pediátrico conciso, priorizando problemas e sem inventar dados."})
+            st.markdown(f"<div class='passagem-box'>{texto}</div>", unsafe_allow_html=True)
+        else:
+            st.info("IA não configurada.")
+
+
+def _render_plano_terapeutico(plano_base):
+    st.markdown("<span id='eixo-plano'></span>", unsafe_allow_html=True)
+    st.subheader("📋 Plano terapêutico")
+    st.caption("Plano construído a partir da lista de problemas, protocolos, vacinação, suplementação e orientações por idade.")
+    cols = st.columns(2)
+    with cols[0]:
+        st.markdown("<div class='soft-card'><div class='soft-title'>🎯 Prioridades de seguimento</div>" + html_lista(plano_base) + "</div>", unsafe_allow_html=True)
+        vac = st.session_state.get("passagem_vacinas", {})
+        if vac.get("atrasadas"):
+            st.markdown("<div class='soft-card'><div class='soft-title'>💉 Regularização vacinal</div>" + html_lista(vac.get("atrasadas", [])[:16]) + "</div>", unsafe_allow_html=True)
+    with cols[1]:
+        sup = st.session_state.get("passagem_suplementacao", {})
+        st.markdown("<div class='soft-card'><div class='soft-title'>💊 Suplementação e medicamentos</div>" + html_lista(sup.get("resumo", [])) + "</div>", unsafe_allow_html=True)
+        amb = st.session_state.get("passagem_ambulatorio", {})
+        if amb.get("prescricao"):
+            st.markdown(f"<div class='prescricao'>{amb.get('prescricao')}</div>", unsafe_allow_html=True)
+    st.markdown("### Orientações gerais por idade/achados")
+    for bloco in obter_orientacoes_detalhadas(idade_meses_float, prematuro)[:4]:
+        st.markdown(f"<div class='soft-card'><div class='soft-title'>{bloco['icone']} {bloco['titulo']}</div>{html_lista(bloco['itens'])}</div>", unsafe_allow_html=True)
+
+
+with tabs[9]:
+    _render_diagnosticos()
+
 # Plano sugestivo básico para passagem
 plano = []
 qc = st.session_state.get("passagem_consulta", {}).get("queixa_hda", "")
@@ -1220,6 +1437,9 @@ if st.session_state.get("passagem_desenvolvimento", {}).get("pendentes"):
     plano.append("orientar estimulação e reavaliar marcos ausentes/não verificados")
 plano.append("programar retorno conforme achados clínicos, crescimento, desenvolvimento e demanda familiar")
 st.session_state["passagem_plano"] = plano
+
+with tabs[10]:
+    _render_plano_terapeutico(plano)
 
 
 # Abre a passagem no fim da execução, após todas as seções atualizarem o session_state.

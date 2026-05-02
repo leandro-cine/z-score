@@ -8,55 +8,85 @@ from PIL import Image, ImageDraw
 
 try:
     from streamlit_image_coordinates import streamlit_image_coordinates
-except Exception:  # O app continua funcionando, mas sem clique direto na imagem.
+except Exception:
     streamlit_image_coordinates = None
 
 
-ASSETS_MAPAS = Path("assets/mapas")
+def _asset_dir() -> Path:
+    candidates = [
+        Path.cwd() / "assets" / "mapas",
+        Path(__file__).resolve().parent / "assets" / "mapas",
+        Path("/mnt/data/assets/mapas"),
+    ]
+    for c in candidates:
+        if c.exists():
+            return c
+    return candidates[0]
 
+ASSETS_MAPAS = _asset_dir()
 
+# Áreas em coordenadas relativas (x1, y1, x2, y2). Ajustáveis conforme a imagem final.
 AREAS_LINFONODOS_BEBE = [
-    {"nome": "Submentonianos", "box": (0.05, 0.62, 0.18, 0.74)},
-    {"nome": "Submandibulares", "box": (0.17, 0.68, 0.32, 0.82)},
-    {"nome": "Cervicais anteriores superficiais", "box": (0.33, 0.54, 0.52, 0.70)},
-    {"nome": "Cervicais anteriores profundos", "box": (0.35, 0.67, 0.56, 0.83)},
-    {"nome": "Supraclaviculares", "box": (0.41, 0.82, 0.58, 0.95)},
-    {"nome": "Retroauriculares", "box": (0.31, 0.40, 0.44, 0.55)},
-    {"nome": "Occipitais", "box": (0.37, 0.29, 0.54, 0.44)},
-    {"nome": "Cervicais posteriores", "box": (0.50, 0.53, 0.66, 0.79)},
+    {"nome": "Submentonianos", "box": (0.03, 0.61, 0.22, 0.72)},
+    {"nome": "Submandibulares", "box": (0.13, 0.70, 0.34, 0.83)},
+    {"nome": "Cervicais anteriores superficiais", "box": (0.39, 0.55, 0.58, 0.70)},
+    {"nome": "Cervicais anteriores profundos", "box": (0.39, 0.68, 0.60, 0.84)},
+    {"nome": "Supraclaviculares", "box": (0.45, 0.82, 0.64, 0.96)},
+    {"nome": "Retroauriculares", "box": (0.78, 0.38, 0.96, 0.52)},
+    {"nome": "Occipitais", "box": (0.80, 0.27, 0.98, 0.40)},
+    {"nome": "Cervicais posteriores", "box": (0.78, 0.53, 0.98, 0.75)},
 ]
 
 AREAS_LINFONODOS_CRIANCA = [
-    {"nome": "Submentonianos", "box": (0.05, 0.61, 0.20, 0.74)},
-    {"nome": "Submandibulares", "box": (0.17, 0.68, 0.33, 0.82)},
-    {"nome": "Cervicais anteriores superficiais", "box": (0.33, 0.53, 0.53, 0.70)},
-    {"nome": "Cervicais anteriores profundos", "box": (0.35, 0.67, 0.56, 0.83)},
-    {"nome": "Supraclaviculares", "box": (0.41, 0.82, 0.58, 0.95)},
-    {"nome": "Retroauriculares", "box": (0.31, 0.39, 0.44, 0.53)},
-    {"nome": "Occipitais", "box": (0.36, 0.28, 0.54, 0.43)},
-    {"nome": "Cervicais posteriores", "box": (0.49, 0.52, 0.66, 0.79)},
+    {"nome": "Submentonianos", "box": (0.03, 0.61, 0.22, 0.73)},
+    {"nome": "Submandibulares", "box": (0.13, 0.70, 0.34, 0.83)},
+    {"nome": "Cervicais anteriores superficiais", "box": (0.39, 0.55, 0.58, 0.70)},
+    {"nome": "Cervicais anteriores profundos", "box": (0.39, 0.68, 0.60, 0.84)},
+    {"nome": "Supraclaviculares", "box": (0.45, 0.82, 0.64, 0.96)},
+    {"nome": "Retroauriculares", "box": (0.78, 0.38, 0.96, 0.52)},
+    {"nome": "Occipitais", "box": (0.80, 0.27, 0.98, 0.40)},
+    {"nome": "Cervicais posteriores", "box": (0.78, 0.53, 0.98, 0.75)},
 ]
 
 AREAS_ODONTOGRAMA = [
-    {"nome": "Decídua — incisivos superiores", "box": (0.23, 0.21, 0.37, 0.35)},
-    {"nome": "Decídua — caninos superiores", "box": (0.17, 0.28, 0.43, 0.42)},
-    {"nome": "Decídua — molares superiores", "box": (0.08, 0.35, 0.49, 0.52)},
-    {"nome": "Decídua — incisivos inferiores", "box": (0.24, 0.72, 0.38, 0.86)},
-    {"nome": "Decídua — caninos inferiores", "box": (0.17, 0.67, 0.45, 0.84)},
-    {"nome": "Decídua — molares inferiores", "box": (0.07, 0.55, 0.49, 0.76)},
-    {"nome": "Permanente — incisivos superiores", "box": (0.60, 0.16, 0.78, 0.31)},
-    {"nome": "Permanente — caninos superiores", "box": (0.56, 0.20, 0.84, 0.35)},
-    {"nome": "Permanente — pré-molares superiores", "box": (0.53, 0.30, 0.88, 0.47)},
-    {"nome": "Permanente — molares superiores", "box": (0.51, 0.41, 0.91, 0.58)},
-    {"nome": "Permanente — incisivos inferiores", "box": (0.64, 0.72, 0.78, 0.86)},
-    {"nome": "Permanente — caninos inferiores", "box": (0.57, 0.68, 0.85, 0.84)},
-    {"nome": "Permanente — pré-molares inferiores", "box": (0.53, 0.55, 0.89, 0.75)},
-    {"nome": "Permanente — molares inferiores", "box": (0.51, 0.44, 0.91, 0.64)},
+    {"nome": "Decídua — incisivos superiores", "box": (0.23, 0.20, 0.39, 0.35)},
+    {"nome": "Decídua — caninos superiores", "box": (0.16, 0.27, 0.46, 0.42)},
+    {"nome": "Decídua — molares superiores", "box": (0.08, 0.35, 0.50, 0.52)},
+    {"nome": "Decídua — incisivos inferiores", "box": (0.23, 0.73, 0.40, 0.86)},
+    {"nome": "Decídua — caninos inferiores", "box": (0.16, 0.66, 0.46, 0.84)},
+    {"nome": "Decídua — molares inferiores", "box": (0.07, 0.54, 0.50, 0.77)},
+    {"nome": "Permanente — incisivos superiores", "box": (0.58, 0.15, 0.78, 0.31)},
+    {"nome": "Permanente — caninos superiores", "box": (0.55, 0.20, 0.86, 0.35)},
+    {"nome": "Permanente — pré-molares superiores", "box": (0.52, 0.30, 0.90, 0.47)},
+    {"nome": "Permanente — molares superiores", "box": (0.50, 0.40, 0.92, 0.58)},
+    {"nome": "Permanente — incisivos inferiores", "box": (0.62, 0.72, 0.80, 0.86)},
+    {"nome": "Permanente — caninos inferiores", "box": (0.56, 0.68, 0.87, 0.84)},
+    {"nome": "Permanente — pré-molares inferiores", "box": (0.52, 0.55, 0.90, 0.75)},
+    {"nome": "Permanente — molares inferiores", "box": (0.50, 0.44, 0.92, 0.64)},
 ]
 
 
+def _resolver_path(nome: str) -> Path:
+    primary = ASSETS_MAPAS / nome
+    if primary.exists():
+        return primary
+    # fallback para nomes originais quando o usuário ainda não renomeou
+    fallbacks = {
+        "linfonodos_bebe.png": ["Gemini_Generated_Image_bojf8kbojf8kbojf.png"],
+        "linfonodos_crianca.png": ["Gemini_Generated_Image_dl29vydl29vydl29.png"],
+        "odontograma.png": ["Gemini_Generated_Image_dtaa23dtaa23dtaa.png"],
+    }
+    roots = [Path.cwd(), Path(__file__).resolve().parent, Path("/mnt/data")]
+    for fname in fallbacks.get(nome, []):
+        for root in roots:
+            p = root / fname
+            if p.exists():
+                return p
+    return primary
+
+
 def _abrir_imagem(path: Path, largura_maxima: int = 1100) -> Image.Image:
-    img = Image.open(path).convert("RGBA")
+    img = Image.open(path).convert("RGB")
     w, h = img.size
     if w > largura_maxima:
         fator = largura_maxima / w
@@ -64,51 +94,28 @@ def _abrir_imagem(path: Path, largura_maxima: int = 1100) -> Image.Image:
     return img
 
 
-def _desenhar_areas(img: Image.Image, areas: List[Dict], selecionadas: List[str]) -> Image.Image:
-    """
-    Desenha áreas clicáveis sem cobrir a imagem anatômica.
-
-    Versões anteriores usavam retângulos preenchidos; em modo escuro, alguns
-    navegadores/componentes renderizavam a transparência como blocos escuros.
-    Aqui usamos contorno suave + marcador numerado, preservando a leitura da imagem.
-    """
-    overlay = img.copy().convert("RGBA")
-    draw = ImageDraw.Draw(overlay, "RGBA")
-    w, h = img.size
-
+def _desenhar_marcadores(img: Image.Image, areas: List[Dict], selecionadas: List[str]) -> Image.Image:
+    # Não desenha retângulos grandes: preserva a imagem anatômica.
+    out = img.copy().convert("RGBA")
+    draw = ImageDraw.Draw(out, "RGBA")
+    w, h = out.size
     for idx, area in enumerate(areas, start=1):
         x1, y1, x2, y2 = area["box"]
-        box = (int(x1 * w), int(y1 * h), int(x2 * w), int(y2 * h))
         cx = int(((x1 + x2) / 2) * w)
         cy = int(((y1 + y2) / 2) * h)
-
-        selecionada = area["nome"] in selecionadas
-        outline = (13, 148, 136, 245) if selecionada else (37, 99, 235, 170)
-        marker_fill = (13, 148, 136, 235) if selecionada else (37, 99, 235, 185)
-        marker_outline = (255, 255, 255, 245)
-        width = 4 if selecionada else 2
-
-        # Apenas contorno: não cobre texto/estruturas anatômicas.
-        draw.rounded_rectangle(box, radius=14, fill=None, outline=outline, width=width)
-
-        # Marcador pequeno no centro da área clicável.
-        r = 13 if selecionada else 10
-        draw.ellipse((cx - r, cy - r, cx + r, cy + r), fill=marker_fill, outline=marker_outline, width=2)
-        label = str(idx)
-        # Centralização simples suficiente para 1–2 dígitos.
-        draw.text((cx - (4 if idx < 10 else 7), cy - 7), label, fill=(255, 255, 255, 255))
-
-    # Compor sobre fundo branco evita artefatos de transparência no modo escuro.
-    fundo = Image.new("RGBA", overlay.size, (255, 255, 255, 255))
-    fundo.alpha_composite(overlay)
-    return fundo.convert("RGB")
+        selected = area["nome"] in selecionadas
+        fill = (13, 148, 136, 235) if selected else (37, 99, 235, 210)
+        outline = (255, 255, 255, 255)
+        r = 15 if selected else 12
+        draw.ellipse((cx-r, cy-r, cx+r, cy+r), fill=fill, outline=outline, width=2)
+        draw.text((cx-(4 if idx<10 else 7), cy-7), str(idx), fill=(255,255,255,255))
+    return out.convert("RGB")
 
 
 def _area_do_click(value: Optional[Dict], img: Image.Image, areas: List[Dict]) -> Optional[str]:
     if not value:
         return None
-    x = value.get("x")
-    y = value.get("y")
+    x, y = value.get("x"), value.get("y")
     if x is None or y is None:
         return None
     w, h = img.size
@@ -120,27 +127,32 @@ def _area_do_click(value: Optional[Dict], img: Image.Image, areas: List[Dict]) -
     return None
 
 
-def _render_mapa(titulo: str, path: Path, areas: List[Dict], key: str):
+def _render_mapa(titulo: str, nome_imagem: str, areas: List[Dict], key: str):
     st.markdown(f"#### {titulo}")
     if key not in st.session_state:
         st.session_state[key] = []
     selecionadas = st.session_state[key]
 
+    path = _resolver_path(nome_imagem)
     if not path.exists():
-        st.warning(f"Imagem não encontrada: `{path}`. Crie a pasta `assets/mapas/` e envie a imagem com esse nome.")
-        return selecionadas
+        st.warning(
+            f"Imagem não encontrada: `{nome_imagem}`. Envie para `assets/mapas/` ou use o ZIP completo com as imagens."
+        )
+        escolhidas = st.multiselect("Selecionar áreas manualmente", [a["nome"] for a in areas], default=selecionadas, key=f"fallback_{key}")
+        st.session_state[key] = escolhidas
+        return escolhidas
 
     img = _abrir_imagem(path)
-    img_overlay = _desenhar_areas(img, areas, selecionadas)
+    img_click = _desenhar_marcadores(img, areas, selecionadas)
 
     if streamlit_image_coordinates is None:
-        st.image(img_overlay, use_container_width=True)
-        st.info("Para clicar diretamente na imagem, adicione `streamlit-image-coordinates` ao requirements.txt. Enquanto isso, use a seleção abaixo.")
+        st.image(img_click, use_container_width=True)
+        st.info("Para clicar diretamente na imagem, adicione `streamlit-image-coordinates` ao requirements.txt. Enquanto isso, use a seleção manual.")
         escolhidas = st.multiselect("Selecionar áreas", [a["nome"] for a in areas], default=selecionadas, key=f"fallback_{key}")
         st.session_state[key] = escolhidas
     else:
-        value = streamlit_image_coordinates(img_overlay, key=f"coords_{key}", use_column_width=True)
-        clicada = _area_do_click(value, img_overlay, areas)
+        value = streamlit_image_coordinates(img_click, key=f"coords_{key}", use_column_width=True)
+        clicada = _area_do_click(value, img_click, areas)
         if clicada:
             if clicada in st.session_state[key]:
                 st.session_state[key].remove(clicada)
@@ -156,16 +168,17 @@ def _render_mapa(titulo: str, path: Path, areas: List[Dict], key: str):
     if resultado:
         st.success("Selecionado: " + "; ".join(resultado))
     else:
-        st.caption("Clique nas áreas destacadas ou selecione na lista alternativa.")
+        st.caption("Clique na região anatômica da imagem ou use a seleção manual se necessário.")
     return resultado
 
 
 def selecionar_linfodos_por_imagem(tipo: str = "criança", key_suffix: str = ""):
     tipo = (tipo or "criança").lower()
+    key = f"mapa_linfodos_bebe_{key_suffix}" if tipo.startswith("beb") else f"mapa_linfodos_crianca_{key_suffix}"
     if tipo.startswith("beb"):
-        return _render_mapa("Mapa anatômico — linfonodos em bebê", ASSETS_MAPAS / "linfonodos_bebe.png", AREAS_LINFONODOS_BEBE, f"mapa_linfodos_bebe_{key_suffix}" if key_suffix else "mapa_linfodos_bebe")
-    return _render_mapa("Mapa anatômico — linfonodos em criança", ASSETS_MAPAS / "linfonodos_crianca.png", AREAS_LINFONODOS_CRIANCA, f"mapa_linfodos_crianca_{key_suffix}" if key_suffix else "mapa_linfodos_crianca")
+        return _render_mapa("Mapa anatômico — linfonodos em bebê", "linfonodos_bebe.png", AREAS_LINFONODOS_BEBE, key)
+    return _render_mapa("Mapa anatômico — linfonodos em criança", "linfonodos_crianca.png", AREAS_LINFONODOS_CRIANCA, key)
 
 
 def selecionar_odontograma_por_imagem(key_suffix: str = ""):
-    return _render_mapa("Mapa dentário — dentição decídua e permanente", ASSETS_MAPAS / "odontograma.png", AREAS_ODONTOGRAMA, f"mapa_odontograma_{key_suffix}" if key_suffix else "mapa_odontograma")
+    return _render_mapa("Mapa dentário — dentição decídua e permanente", "odontograma.png", AREAS_ODONTOGRAMA, f"mapa_odontograma_{key_suffix}")
