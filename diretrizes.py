@@ -186,11 +186,11 @@ def recomendacao_ferro(meses: float, peso_atual_kg: float, peso_nasc_g: float, i
         if meses >= 12:
             alvo = 1.0
         dose = peso_atual_kg * alvo
-        return {"protocolo": "SBP — pré-termo/baixo peso", "dose_mg_dia": dose, "dose_mg_kg_dia": alvo, "resumo": f"Criança com prematuridade/baixo peso: usar {alvo:g} mg/kg/dia de ferro elementar nesta etapa.", "conduta": "Individualizar conforme peso ao nascer, idade corrigida, dieta, exames e seguimento de risco."}
+        return {"protocolo": "Pré-termo/baixo peso", "dose_mg_dia": dose, "dose_mg_kg_dia": alvo, "resumo": f"Criança com prematuridade/baixo peso: usar {alvo:g} mg/kg/dia de ferro elementar nesta etapa.", "conduta": "Individualizar conforme peso ao nascer, idade corrigida, dieta, exames e seguimento de risco."}
 
     alvo = 1.0 if meses >= 3 else 0.0
     dose = peso_atual_kg * alvo
-    return {"protocolo": "SBP — presença de fatores de risco", "dose_mg_dia": dose, "dose_mg_kg_dia": alvo, "resumo": "Há fatores de risco maternos ou da criança; usar dose em mg/kg/dia e acompanhar resposta/adesão.", "conduta": "Investigar anemia/deficiência de ferro se sinais clínicos, dieta inadequada ou múltiplos fatores de risco."}
+    return {"protocolo": "Presença de fatores de risco", "dose_mg_dia": dose, "dose_mg_kg_dia": alvo, "resumo": "Há fatores de risco maternos ou da criança; usar dose em mg/kg/dia e acompanhar resposta/adesão.", "conduta": "Investigar anemia/deficiência de ferro se sinais clínicos, dieta inadequada ou múltiplos fatores de risco."}
 
 
 def calcular_apresentacao_ferro(dose_mg_dia: float, apresentacao: dict):
