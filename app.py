@@ -497,9 +497,9 @@ with st.expander("🧾 Dados da criança e da consulta", expanded=True):
         peso_nasc_g = st.number_input("Peso ao nascer (g)", min_value=300, max_value=6500, value=3200, step=10)
         igc1, igc2 = st.columns([1, 1])
         with igc1:
-            idade_gest_semanas = st.number_input("IG ao nascer — semanas", min_value=22, max_value=42, value=39, step=1)
+            idade_gest_semanas = st.number_input("IG ao nascer (S)", min_value=22, max_value=42, value=39, step=1)
         with igc2:
-            idade_gest_dias = st.number_input("IG ao nascer — dias", min_value=0, max_value=6, value=0, step=1)
+            idade_gest_dias = st.number_input("IG ao nascer (D)", min_value=0, max_value=6, value=0, step=1)
         idade_gest_sem = idade_gest_semanas + (idade_gest_dias / 7)
     with c4:
         prematuro = idade_gest_sem < 37
