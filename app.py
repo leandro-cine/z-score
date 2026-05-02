@@ -664,9 +664,53 @@ def render_lista_medicamentos(prefix: str, titulo: str, idade_txt: str, peso_kg:
 
 tabelas = carregar_tabelas()
 
+# Valores centrais são inicializados antes da renderização dos eixos para permitir
+# cálculo de idade, crescimento e resumo fixo sem manter campos fora do prontuário.
+st.session_state.setdefault("sexo", "Masculino")
+st.session_state.setdefault("data_nasc", date(2023, 1, 1))
+st.session_state.setdefault("data_aval", date.today())
+st.session_state.setdefault("peso_nasc_g", 3200)
+st.session_state.setdefault("estatura_nasc_cm", 0.0)
+st.session_state.setdefault("pc_nasc_cm", 0.0)
+st.session_state.setdefault("ig_sem", 39)
+st.session_state.setdefault("ig_dias", 0)
+st.session_state.setdefault("apgar1", 0)
+st.session_state.setdefault("apgar5", 0)
+st.session_state.setdefault("temp", 36.5)
+st.session_state.setdefault("fc", 0)
+st.session_state.setdefault("fr", 0)
+st.session_state.setdefault("spo2", 0)
+st.session_state.setdefault("pa", "")
+st.session_state.setdefault("peso", 10.0)
+st.session_state.setdefault("estatura", 80.0)
+st.session_state.setdefault("pc", 45.0)
+
+sexo = st.session_state["sexo"]
+data_nasc = st.session_state["data_nasc"]
+data_aval = st.session_state["data_aval"]
+peso_nasc_g = st.session_state["peso_nasc_g"]
+estatura_nasc_cm = st.session_state["estatura_nasc_cm"]
+pc_nasc_cm = st.session_state["pc_nasc_cm"]
+ig_sem = st.session_state["ig_sem"]
+ig_dias = st.session_state["ig_dias"]
+apgar1 = st.session_state["apgar1"]
+apgar5 = st.session_state["apgar5"]
+temp = st.session_state["temp"]
+fc = st.session_state["fc"]
+fr = st.session_state["fr"]
+spo2 = st.session_state["spo2"]
+pa = st.session_state["pa"]
+peso = st.session_state["peso"]
+estatura = st.session_state["estatura"]
+pc = st.session_state["pc"]
+idade_gest_sem = float(ig_sem) + float(ig_dias) / 7
+prematuro = idade_gest_sem < 37
+
+# CSS precisa ser carregado antes de qualquer HTML customizado para não aparecer desconfigurado.
+st.markdown(css(sexo), unsafe_allow_html=True)
+
 st.markdown("<div class='hero'><h1>👶 Puericultura Digital</h1><p>Prontuário de puericultura estruturado por eixos: anamnese, exame físico, diagnósticos e plano terapêutico.</p></div>", unsafe_allow_html=True)
 
-# Navegação lateral fixa/institucional inspirada no fluxo do PEC/e-SUS APS.
 with st.sidebar:
     st.markdown("""
     <div class='pec-side-brand'>
@@ -686,68 +730,6 @@ with st.sidebar:
     st.divider()
     st.caption("Preencha os dados na ordem do atendimento. A passagem de caso usa tudo o que estiver preenchido.")
 
-st.markdown(
-    """
-    <div class='pec-axis-ribbon'>
-        <a href='#eixo-anamnese'><span>📝</span><b>Anamnese</b><small>Queixa, HDA, antecedentes, hábitos e vacinação</small></a>
-        <a href='#eixo-exame-fisico'><span>🩺</span><b>Exame físico</b><small>Geral, antropometria, crescimento e desenvolvimento</small></a>
-        <a href='#eixo-diagnosticos'><span>🧩</span><b>Diagnósticos</b><small>Classificações, raciocínio e lista de problemas</small></a>
-        <a href='#eixo-plano'><span>📋</span><b>Plano terapêutico</b><small>Condutas, orientações, prescrição e retorno</small></a>
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
-
-with st.expander("🧾 Identificação, nascimento e exame físico objetivo", expanded=True):
-    st.markdown("### Identificação")
-    c1, c2, c3 = st.columns(3)
-    with c1:
-        sexo = st.selectbox("Sexo", ["Masculino", "Feminino"])
-    with c2:
-        data_nasc = st.date_input("Data de nascimento", value=date(2023, 1, 1), format="DD/MM/YYYY")
-    with c3:
-        data_aval = st.date_input("Data da consulta", value=date.today(), format="DD/MM/YYYY")
-
-    st.markdown("### Dados ao nascer")
-    n1, n2, n3, n4, n5 = st.columns([1, 1, 1, 1, 1])
-    with n1:
-        peso_nasc_g = st.number_input("Peso ao nascer (g)", 300, 6500, 3200, step=10)
-    with n2:
-        estatura_nasc_cm = st.number_input("Estatura ao nascer (cm)", 0.0, 70.0, 0.0, step=0.5)
-    with n3:
-        pc_nasc_cm = st.number_input("PC ao nascer (cm)", 0.0, 50.0, 0.0, step=0.1)
-    with n4:
-        ig_sem = st.number_input("IG ao nascer — semanas", 22, 42, 39, step=1)
-    with n5:
-        ig_dias = st.number_input("IG ao nascer — dias", 0, 6, 0, step=1)
-    ap1, ap2 = st.columns(2)
-    with ap1:
-        apgar1 = st.number_input("Apgar 1º minuto", 0, 10, 0, step=1)
-    with ap2:
-        apgar5 = st.number_input("Apgar 5º minuto", 0, 10, 0, step=1)
-    idade_gest_sem = float(ig_sem) + float(ig_dias) / 7
-    prematuro = idade_gest_sem < 37
-
-    st.markdown("### Exame físico — sinais vitais e antropometria atual")
-    v1, v2, v3, v4, v5 = st.columns(5)
-    with v1:
-        temp = st.number_input("Temp. (°C)", 34.0, 42.0, 36.5, step=0.1)
-    with v2:
-        fc = st.number_input("FC (bpm)", 0, 240, 0, step=1)
-    with v3:
-        fr = st.number_input("FR (irpm)", 0, 100, 0, step=1)
-    with v4:
-        spo2 = st.number_input("SpO₂ (%)", 0, 100, 0, step=1)
-    with v5:
-        pa = st.text_input("PA", value="")
-    a1, a2, a3 = st.columns(3)
-    with a1:
-        peso = st.number_input("Peso atual (kg)", 0.5, 100.0, 10.0, step=0.1)
-    with a2:
-        estatura = st.number_input("Comprimento/estatura atual (cm)", 30.0, 170.0, 80.0, step=0.5)
-    with a3:
-        pc = st.number_input("Perímetro cefálico atual (cm)", 20.0, 70.0, 45.0, step=0.1)
-
 idade_dias_cron = max(0, (data_aval - data_nasc).days)
 correcao_dias = max(0, int(round((40 - idade_gest_sem) * 7))) if prematuro else 0
 idade_dias = max(0, idade_dias_cron - correcao_dias)
@@ -757,8 +739,6 @@ class_ig = classificar_idade_gestacional(idade_gest_sem)
 class_nasc, riscos_nasc = classificar_peso_ig(peso_nasc_g, idade_gest_sem)
 imc = peso / ((estatura/100)**2)
 res_ant = classificar_antropometria(tabelas, sexo, idade_dias, idade_meses_float, peso, estatura, pc) if tabelas else {}
-
-st.markdown(css(sexo), unsafe_allow_html=True)
 
 # Comportamento tipo accordion: ao abrir uma seção/expander, tenta fechar as demais.
 # Em Streamlit puro isso depende da estrutura interna do navegador, então fica como melhoria progressiva.
@@ -830,37 +810,58 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# Topo por eixo. Os containers são criados aqui e preenchidos abaixo.
+# Abas superiores por eixo clínico.
+# As seções antigas são preservadas e anexadas ao eixo correspondente.
 eixo_tabs = st.tabs(["📝 Anamnese", "🩺 Exame físico", "🧩 Diagnósticos", "📋 Plano terapêutico"])
-with eixo_tabs[0]:
-    _anam_tabs = st.tabs(["Queixa/HDA", "Antecedentes e hábitos", "Vacinação", "Suplementação"])
-with eixo_tabs[1]:
-    _exam_tabs = st.tabs(["Geral", "Crescimento", "Desenvolvimento", "Mapas clínicos"])
-with eixo_tabs[2]:
-    _diag_tabs = st.tabs(["Síntese e lista de problemas", "Ambulatório / investigação guiada"])
-with eixo_tabs[3]:
-    _plano_tabs = st.tabs(["Plano terapêutico", "Orientações", "Passagem de caso"])
 
-# Mapeamento para preservar a lógica já implementada abaixo.
+# Mapeamento funcional preservado:
 # 0 Anamnese | 1 Exame geral | 2 Crescimento | 3 Desenvolvimento | 4 Vacinação
 # 5 Ferro/vitaminas | 6 Ambulatório | 7 Orientações | 8 Mapas | 9 Diagnósticos | 10 Plano
 tabs = [
-    _anam_tabs[0],
-    _exam_tabs[0],
-    _exam_tabs[1],
-    _exam_tabs[2],
-    _anam_tabs[2],
-    _anam_tabs[3],
-    _diag_tabs[1],
-    _plano_tabs[1],
-    _exam_tabs[3],
-    _diag_tabs[0],
-    _plano_tabs[0],
+    eixo_tabs[0],  # Anamnese: identificação, HDA, antecedentes, hábitos
+    eixo_tabs[1],  # Exame físico geral/segmentar
+    eixo_tabs[1],  # Crescimento
+    eixo_tabs[1],  # Desenvolvimento
+    eixo_tabs[0],  # Vacinação
+    eixo_tabs[0],  # Suplementação
+    eixo_tabs[2],  # Ambulatório / investigação guiada
+    eixo_tabs[3],  # Orientações
+    eixo_tabs[1],  # Mapas clínicos
+    eixo_tabs[2],  # Diagnósticos / lista de problemas
+    eixo_tabs[3],  # Plano terapêutico
 ]
 
 with tabs[0]:
     st.markdown("<span id='eixo-anamnese'></span>", unsafe_allow_html=True)
     st.subheader("📝 Anamnese estruturada")
+
+    st.markdown("### Identificação do atendimento")
+    id1, id2, id3 = st.columns(3)
+    with id1:
+        sexo = st.selectbox("Sexo", ["Masculino", "Feminino"], key="sexo")
+    with id2:
+        data_nasc = st.date_input("Data de nascimento", key="data_nasc", format="DD/MM/YYYY")
+    with id3:
+        data_aval = st.date_input("Data da consulta", key="data_aval", format="DD/MM/YYYY")
+
+    st.markdown("### Antecedentes pessoais — nascimento")
+    nb1, nb2, nb3 = st.columns(3)
+    with nb1:
+        peso_nasc_g = st.number_input("Peso ao nascer (g)", 300, 6500, key="peso_nasc_g", step=10)
+    with nb2:
+        estatura_nasc_cm = st.number_input("Estatura ao nascer (cm)", 0.0, 70.0, key="estatura_nasc_cm", step=0.5)
+    with nb3:
+        pc_nasc_cm = st.number_input("PC ao nascer (cm)", 0.0, 50.0, key="pc_nasc_cm", step=0.1)
+    ni1, ni2, na1, na2 = st.columns([1, 1, 1, 1])
+    with ni1:
+        ig_sem = st.number_input("IG ao nascer — semanas", 22, 42, key="ig_sem", step=1)
+    with ni2:
+        ig_dias = st.number_input("IG ao nascer — dias", 0, 6, key="ig_dias", step=1)
+    with na1:
+        apgar1 = st.number_input("Apgar 1º minuto", 0, 10, key="apgar1", step=1)
+    with na2:
+        apgar5 = st.number_input("Apgar 5º minuto", 0, 10, key="apgar5", step=1)
+    st.caption("Dados ao nascer ficam registrados nos antecedentes pessoais e alimentam classificação de IG/peso, ferro profilático e idade corrigida.")
 
     st.markdown("## Anamnese")
     queixa = st.text_area("Queixa principal / História da doença atual", placeholder="Ex.: responsável refere tosse há 3 dias, febre...", height=120)
@@ -995,6 +996,29 @@ with tabs[0]:
 with tabs[1]:
     st.markdown("<span id='eixo-exame-fisico'></span>", unsafe_allow_html=True)
     st.markdown("## Exame físico")
+
+    st.markdown("### Geral — sinais vitais e antropometria atual")
+    v1, v2, v3, v4, v5 = st.columns(5)
+    with v1:
+        temp = st.number_input("Temp. (°C)", 34.0, 42.0, key="temp", step=0.1)
+    with v2:
+        fc = st.number_input("FC (bpm)", 0, 240, key="fc", step=1)
+    with v3:
+        fr = st.number_input("FR (irpm)", 0, 100, key="fr", step=1)
+    with v4:
+        spo2 = st.number_input("SpO₂ (%)", 0, 100, key="spo2", step=1)
+    with v5:
+        pa = st.text_input("PA", key="pa")
+    a1, a2, a3, a4 = st.columns(4)
+    with a1:
+        peso = st.number_input("Peso atual (kg)", 0.5, 100.0, key="peso", step=0.1)
+    with a2:
+        estatura = st.number_input("Comprimento/estatura atual (cm)", 30.0, 170.0, key="estatura", step=0.5)
+    with a3:
+        pc = st.number_input("Perímetro cefálico atual (cm)", 20.0, 70.0, key="pc", step=0.1)
+    with a4:
+        st.metric("IMC calculado", f"{imc:.1f}")
+    st.caption("Sinais vitais e antropometria ficam no exame físico, como no fluxo de atendimento clínico.")
     geral = selecionar_opcoes(
         "Geral / ectoscopia",
         ECTOSCOPIA,
