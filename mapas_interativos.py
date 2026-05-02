@@ -65,22 +65,43 @@ def _abrir_imagem(path: Path, largura_maxima: int = 1100) -> Image.Image:
 
 
 def _desenhar_areas(img: Image.Image, areas: List[Dict], selecionadas: List[str]) -> Image.Image:
-    overlay = img.copy()
+    """
+    Desenha áreas clicáveis sem cobrir a imagem anatômica.
+
+    Versões anteriores usavam retângulos preenchidos; em modo escuro, alguns
+    navegadores/componentes renderizavam a transparência como blocos escuros.
+    Aqui usamos contorno suave + marcador numerado, preservando a leitura da imagem.
+    """
+    overlay = img.copy().convert("RGBA")
     draw = ImageDraw.Draw(overlay, "RGBA")
     w, h = img.size
-    for area in areas:
+
+    for idx, area in enumerate(areas, start=1):
         x1, y1, x2, y2 = area["box"]
         box = (int(x1 * w), int(y1 * h), int(x2 * w), int(y2 * h))
-        if area["nome"] in selecionadas:
-            fill = (20, 184, 166, 95)
-            outline = (45, 212, 191, 255)
-            width = 4
-        else:
-            fill = (59, 130, 246, 32)
-            outline = (147, 197, 253, 210)
-            width = 2
-        draw.rounded_rectangle(box, radius=12, fill=fill, outline=outline, width=width)
-    return overlay
+        cx = int(((x1 + x2) / 2) * w)
+        cy = int(((y1 + y2) / 2) * h)
+
+        selecionada = area["nome"] in selecionadas
+        outline = (13, 148, 136, 245) if selecionada else (37, 99, 235, 170)
+        marker_fill = (13, 148, 136, 235) if selecionada else (37, 99, 235, 185)
+        marker_outline = (255, 255, 255, 245)
+        width = 4 if selecionada else 2
+
+        # Apenas contorno: não cobre texto/estruturas anatômicas.
+        draw.rounded_rectangle(box, radius=14, fill=None, outline=outline, width=width)
+
+        # Marcador pequeno no centro da área clicável.
+        r = 13 if selecionada else 10
+        draw.ellipse((cx - r, cy - r, cx + r, cy + r), fill=marker_fill, outline=marker_outline, width=2)
+        label = str(idx)
+        # Centralização simples suficiente para 1–2 dígitos.
+        draw.text((cx - (4 if idx < 10 else 7), cy - 7), label, fill=(255, 255, 255, 255))
+
+    # Compor sobre fundo branco evita artefatos de transparência no modo escuro.
+    fundo = Image.new("RGBA", overlay.size, (255, 255, 255, 255))
+    fundo.alpha_composite(overlay)
+    return fundo.convert("RGB")
 
 
 def _area_do_click(value: Optional[Dict], img: Image.Image, areas: List[Dict]) -> Optional[str]:

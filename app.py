@@ -438,6 +438,33 @@ def css(sexo: str):
     div[data-testid="stExpander"] summary { font-weight:900!important; color:var(--accent)!important; }
     .map-card { background:var(--card); border:1px solid var(--border); border-radius:22px; padding:1rem; box-shadow:var(--shadow); margin-bottom:1rem; }
     @media (max-width:760px) { .block-container { padding-top:3.8rem; } .top-panel { top:3.55rem; border-radius:18px; } .result-card { flex-direction:column; align-items:flex-start; } .result-metrics { text-align:left; } .vaccine-card-grid { grid-template-columns:repeat(2, minmax(0,1fr))!important; } .vaccine-card-link { width:auto!important; max-width:none!important; min-height:112px; } }
+
+    /* ===== DIAGRAMAÇÃO INSPIRADA NO PEC e-SUS APS ===== */
+    :root { --pec-green:#0f766e; --pec-green-2:#115e59; --pec-blue:#1d4ed8; --pec-bg:#f4f7fb; --pec-panel:#ffffff; --pec-line:#d6dee8; --pec-soft:#e8f3f1; }
+    @media (prefers-color-scheme: dark) { :root { --pec-bg:#0b1220; --pec-panel:rgba(15,23,42,.96); --pec-line:rgba(226,232,240,.24); --pec-soft:rgba(20,184,166,.16); --pec-green:#5eead4; --pec-green-2:#99f6e4; --pec-blue:#93c5fd; } }
+    .stApp { background:var(--pec-bg)!important; }
+    .block-container { max-width:1480px; padding-left:1.25rem; padding-right:1.25rem; }
+    .hero { border-radius:0 0 18px 18px!important; margin-top:-.4rem!important; border-top:5px solid var(--pec-green)!important; background:linear-gradient(90deg, var(--pec-panel), color-mix(in srgb, var(--pec-green) 8%, var(--pec-panel)))!important; box-shadow:0 6px 18px rgba(15,23,42,.08)!important; }
+    .hero h1 { color:var(--pec-green)!important; letter-spacing:-.02em; }
+    .hero p { font-size:.95rem; }
+    .top-panel { border-left:6px solid var(--pec-green)!important; border-radius:14px!important; box-shadow:0 8px 22px rgba(15,23,42,.10)!important; }
+    .metric-pill { border:1px solid color-mix(in srgb, var(--pec-green) 28%, transparent)!important; background:color-mix(in srgb, var(--pec-green) 12%, var(--pec-panel))!important; color:var(--pec-green)!important; }
+    .soft-card,.risk-box,.timeline-card,.vaccine-board,.map-card { border-radius:14px!important; border:1px solid var(--pec-line)!important; box-shadow:0 4px 14px rgba(15,23,42,.06)!important; background:var(--pec-panel)!important; }
+    .soft-title,.vaccine-board-title,.vaccine-age-title { color:var(--pec-green)!important; }
+    div[data-testid="stTabs"] [data-baseweb="tab-list"] { gap:.35rem; border-bottom:1px solid var(--pec-line); padding:.25rem .25rem 0; background:var(--pec-panel); border-radius:14px 14px 0 0; }
+    div[data-testid="stTabs"] button[role="tab"] { border:1px solid transparent; border-radius:12px 12px 0 0; padding:.62rem .9rem; color:var(--muted)!important; font-weight:800; }
+    div[data-testid="stTabs"] button[aria-selected="true"] { background:var(--pec-soft)!important; color:var(--pec-green)!important; border-color:var(--pec-line)!important; border-bottom-color:transparent!important; }
+    div[data-testid="stExpander"] details { border-radius:12px!important; border:1px solid var(--pec-line)!important; background:var(--pec-panel)!important; box-shadow:none!important; }
+    div[data-testid="stExpander"] summary { border-radius:12px!important; }
+    div[data-testid="stPopover"] button { min-height:2.55rem; border-radius:12px!important; background:linear-gradient(135deg, color-mix(in srgb, var(--pec-green) 16%, var(--pec-panel)), var(--pec-panel))!important; border:1px solid color-mix(in srgb, var(--pec-green) 35%, var(--pec-line))!important; color:var(--pec-green)!important; box-shadow:0 3px 10px rgba(15,23,42,.06)!important; }
+    .modern-select-card { border-radius:14px!important; background:var(--pec-panel)!important; border:1px solid var(--pec-line)!important; box-shadow:0 2px 10px rgba(15,23,42,.05)!important; }
+    .modern-select-card:before { width:4px!important; background:var(--pec-green)!important; }
+    .modern-select-label { color:var(--pec-green)!important; }
+    .vaccine-card-grid { grid-template-columns:repeat(auto-fill, minmax(150px,150px))!important; }
+    .vaccine-card-link { border-radius:14px!important; box-shadow:0 3px 10px rgba(15,23,42,.10)!important; }
+    .vaccine-modal-card { border-radius:16px!important; border-top:5px solid var(--pec-green)!important; }
+    .map-card img { border-radius:12px!important; border:1px solid var(--pec-line)!important; }
+    @media (prefers-color-scheme: dark) { .hero,.top-panel,.soft-card,.risk-box,.timeline-card,.vaccine-board,.map-card,.modern-select-card,div[data-testid="stExpander"] details,div[data-testid="stTabs"] [data-baseweb="tab-list"] { background:var(--pec-panel)!important; } .hero h1,.soft-title,.vaccine-board-title,.vaccine-age-title,.modern-select-label { color:var(--pec-green-2)!important; } .hero p,.small-muted,.modern-select-value { color:#dbeafe!important; } }
     </style>
     """
     return template.replace("__ACCENT__", accent)
