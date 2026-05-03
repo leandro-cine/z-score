@@ -566,6 +566,158 @@ def css(sexo: str):
     section[data-testid="stSidebar"] div[role="radiogroup"] label:nth-child(4)::before { mask-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="black" stroke-width="2"><path d="M9 12l2 2 4-4"/><path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg>'); -webkit-mask-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="black" stroke-width="2"><path d="M9 12l2 2 4-4"/><path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg>'); }
     @media (max-width: 760px) { section[data-testid="stSidebar"] { min-width:64px!important; width:64px!important; } section[data-testid="stSidebar"]:hover { min-width:250px!important; width:250px!important; } }
 
+
+    /* ===== CORREÇÃO DEFINITIVA DO MENU LATERAL COMPACTO ===== */
+    section[data-testid="stSidebar"] {
+        min-width: 76px !important;
+        width: 76px !important;
+        max-width: 76px !important;
+        transition: width .18s ease, min-width .18s ease, max-width .18s ease;
+        overflow-x: hidden !important;
+    }
+    section[data-testid="stSidebar"]:hover {
+        min-width: 292px !important;
+        width: 292px !important;
+        max-width: 292px !important;
+    }
+    section[data-testid="stSidebar"] [data-testid="stSidebarUserContent"] {
+        padding: .85rem .55rem !important;
+        overflow-x: hidden !important;
+    }
+
+    /* Marca: no modo compacto fica apenas o ícone; ao expandir mostra o texto */
+    section[data-testid="stSidebar"] .pec-side-brand {
+        justify-content: center !important;
+        padding: .65rem .35rem !important;
+        gap: 0 !important;
+    }
+    section[data-testid="stSidebar"] .pec-side-logo {
+        flex: 0 0 42px !important;
+        width: 42px !important;
+        height: 42px !important;
+        min-width: 42px !important;
+        overflow: hidden !important;
+        font-size: 0 !important;
+    }
+    section[data-testid="stSidebar"] .pec-side-logo::after {
+        content: "SUS";
+        font-size: .78rem !important;
+        font-weight: 950 !important;
+        color: inherit !important;
+    }
+    section[data-testid="stSidebar"] .pec-side-brand > div:not(.pec-side-logo) {
+        display: none !important;
+        opacity: 0 !important;
+        width: 0 !important;
+        max-width: 0 !important;
+        overflow: hidden !important;
+        white-space: nowrap !important;
+    }
+    section[data-testid="stSidebar"]:hover .pec-side-brand {
+        justify-content: flex-start !important;
+        gap: .75rem !important;
+        padding: .85rem .7rem !important;
+    }
+    section[data-testid="stSidebar"]:hover .pec-side-brand > div:not(.pec-side-logo) {
+        display: block !important;
+        opacity: 1 !important;
+        width: auto !important;
+        max-width: 210px !important;
+    }
+
+    /* Esconde elementos auxiliares no modo compacto para não quebrar letras na vertical */
+    section[data-testid="stSidebar"]:not(:hover) .stCaption,
+    section[data-testid="stSidebar"]:not(:hover) [data-testid="stCaptionContainer"],
+    section[data-testid="stSidebar"]:not(:hover) [data-testid="stTextInput"],
+    section[data-testid="stSidebar"]:not(:hover) hr {
+        display: none !important;
+    }
+    section[data-testid="stSidebar"]:hover .stCaption,
+    section[data-testid="stSidebar"]:hover [data-testid="stCaptionContainer"],
+    section[data-testid="stSidebar"]:hover [data-testid="stTextInput"] {
+        display: block !important;
+    }
+
+    /* Radio do menu: compacto = só ícone vetorial; expandido = ícone + texto */
+    section[data-testid="stSidebar"] div[role="radiogroup"] {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: .45rem !important;
+    }
+    section[data-testid="stSidebar"] div[role="radiogroup"] label {
+        position: relative !important;
+        min-height: 54px !important;
+        width: 54px !important;
+        max-width: 54px !important;
+        margin: .2rem auto !important;
+        padding: 0 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        border-radius: 16px !important;
+        overflow: hidden !important;
+    }
+    section[data-testid="stSidebar"] div[role="radiogroup"] label input {
+        display: none !important;
+    }
+    section[data-testid="stSidebar"] div[role="radiogroup"] label p,
+    section[data-testid="stSidebar"] div[role="radiogroup"] label span:not([data-testid]) {
+        display: none !important;
+        opacity: 0 !important;
+        width: 0 !important;
+        max-width: 0 !important;
+        overflow: hidden !important;
+        white-space: nowrap !important;
+        font-size: 0 !important;
+    }
+    section[data-testid="stSidebar"] div[role="radiogroup"] label::before {
+        margin: 0 !important;
+        flex: 0 0 28px !important;
+        width: 28px !important;
+        height: 28px !important;
+    }
+    section[data-testid="stSidebar"]:hover div[role="radiogroup"] label {
+        width: 100% !important;
+        max-width: 100% !important;
+        justify-content: flex-start !important;
+        gap: .7rem !important;
+        padding: .78rem .75rem !important;
+        margin: .28rem 0 !important;
+    }
+    section[data-testid="stSidebar"]:hover div[role="radiogroup"] label p {
+        display: block !important;
+        opacity: 1 !important;
+        width: auto !important;
+        max-width: 205px !important;
+        font-size: 1rem !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+    }
+
+    /* Área principal ocupa o restante sem sobreposição visual */
+    .block-container {
+        transition: padding-left .18s ease !important;
+    }
+
+    @media (max-width: 760px) {
+        section[data-testid="stSidebar"] {
+            min-width: 62px !important;
+            width: 62px !important;
+            max-width: 62px !important;
+        }
+        section[data-testid="stSidebar"]:hover {
+            min-width: 252px !important;
+            width: 252px !important;
+            max-width: 252px !important;
+        }
+        section[data-testid="stSidebar"] div[role="radiogroup"] label {
+            width: 48px !important;
+            max-width: 48px !important;
+            min-height: 48px !important;
+        }
+    }
+
 </style>
     """
     return template.replace("__ACCENT__", accent)
