@@ -718,6 +718,215 @@ def css(sexo: str):
         }
     }
 
+
+    /* ===== HOTFIX FINAL: MENU LATERAL COMPACTO SEM TEXTO QUEBRADO ===== */
+    section[data-testid="stSidebar"] {
+        min-width: 88px !important;
+        width: 88px !important;
+        max-width: 88px !important;
+        overflow-x: hidden !important;
+        background: var(--pec-panel, #111827) !important;
+        border-right: 1px solid var(--pec-line, rgba(148,163,184,.25)) !important;
+        transition: min-width .18s ease, width .18s ease, max-width .18s ease !important;
+    }
+
+    section[data-testid="stSidebar"]:hover,
+    section[data-testid="stSidebar"]:focus-within {
+        min-width: 304px !important;
+        width: 304px !important;
+        max-width: 304px !important;
+    }
+
+    section[data-testid="stSidebar"] [data-testid="stSidebarUserContent"] {
+        padding: .95rem .7rem !important;
+        overflow-x: hidden !important;
+    }
+
+    /* Marca: compacta como ícone vetorial; expandida com texto */
+    section[data-testid="stSidebar"] .pec-side-brand {
+        width: 56px !important;
+        height: 56px !important;
+        padding: 0 !important;
+        margin: .25rem auto 1rem auto !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 0 !important;
+        overflow: hidden !important;
+        border-radius: 18px !important;
+    }
+
+    section[data-testid="stSidebar"] .pec-side-logo {
+        width: 44px !important;
+        height: 44px !important;
+        min-width: 44px !important;
+        flex: 0 0 44px !important;
+        font-size: 0 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        border-radius: 14px !important;
+    }
+
+    section[data-testid="stSidebar"] .pec-side-logo::after {
+        content: "" !important;
+        width: 26px !important;
+        height: 26px !important;
+        display: block !important;
+        background: currentColor !important;
+        -webkit-mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="black" stroke-width="2"><path d="M4 6.5A2.5 2.5 0 0 1 6.5 4H20v16H6.5A2.5 2.5 0 0 1 4 17.5v-11z"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>') center / contain no-repeat !important;
+        mask: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="black" stroke-width="2"><path d="M4 6.5A2.5 2.5 0 0 1 6.5 4H20v16H6.5A2.5 2.5 0 0 1 4 17.5v-11z"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>') center / contain no-repeat !important;
+    }
+
+    section[data-testid="stSidebar"] .pec-side-brand > div:not(.pec-side-logo) {
+        display: none !important;
+        width: 0 !important;
+        max-width: 0 !important;
+        opacity: 0 !important;
+        overflow: hidden !important;
+        white-space: nowrap !important;
+    }
+
+    section[data-testid="stSidebar"]:hover .pec-side-brand,
+    section[data-testid="stSidebar"]:focus-within .pec-side-brand {
+        width: 100% !important;
+        height: auto !important;
+        margin: .25rem 0 1rem 0 !important;
+        padding: .75rem .7rem !important;
+        justify-content: flex-start !important;
+        gap: .75rem !important;
+    }
+
+    section[data-testid="stSidebar"]:hover .pec-side-brand > div:not(.pec-side-logo),
+    section[data-testid="stSidebar"]:focus-within .pec-side-brand > div:not(.pec-side-logo) {
+        display: block !important;
+        width: auto !important;
+        max-width: 220px !important;
+        opacity: 1 !important;
+    }
+
+    /* Esconde textos auxiliares no modo compacto */
+    section[data-testid="stSidebar"]:not(:hover):not(:focus-within) .stCaption,
+    section[data-testid="stSidebar"]:not(:hover):not(:focus-within) [data-testid="stCaptionContainer"],
+    section[data-testid="stSidebar"]:not(:hover):not(:focus-within) [data-testid="stTextInput"],
+    section[data-testid="stSidebar"]:not(:hover):not(:focus-within) hr,
+    section[data-testid="stSidebar"]:not(:hover):not(:focus-within) .element-container:has([data-testid="stTextInput"]) {
+        display: none !important;
+    }
+
+    /* Radio compacto: só ícones; nenhum texto pode quebrar em coluna */
+    section[data-testid="stSidebar"] div[role="radiogroup"] {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        gap: .62rem !important;
+        width: 100% !important;
+    }
+
+    section[data-testid="stSidebar"] div[role="radiogroup"] label {
+        width: 56px !important;
+        height: 56px !important;
+        min-width: 56px !important;
+        max-width: 56px !important;
+        min-height: 56px !important;
+        margin: 0 auto !important;
+        padding: 0 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        border-radius: 18px !important;
+        box-sizing: border-box !important;
+        overflow: hidden !important;
+        background: var(--pec-panel, var(--card)) !important;
+        border: 1px solid var(--pec-line, var(--border)) !important;
+    }
+
+    section[data-testid="stSidebar"] div[role="radiogroup"] label > div:first-child,
+    section[data-testid="stSidebar"] div[role="radiogroup"] label input {
+        display: none !important;
+    }
+
+    section[data-testid="stSidebar"]:not(:hover):not(:focus-within) div[role="radiogroup"] label p,
+    section[data-testid="stSidebar"]:not(:hover):not(:focus-within) div[role="radiogroup"] label span,
+    section[data-testid="stSidebar"]:not(:hover):not(:focus-within) div[role="radiogroup"] label [data-testid="stMarkdownContainer"] {
+        display: none !important;
+        font-size: 0 !important;
+        opacity: 0 !important;
+        width: 0 !important;
+        max-width: 0 !important;
+        line-height: 0 !important;
+        overflow: hidden !important;
+        white-space: nowrap !important;
+    }
+
+    section[data-testid="stSidebar"] div[role="radiogroup"] label::before {
+        content: "" !important;
+        width: 29px !important;
+        height: 29px !important;
+        min-width: 29px !important;
+        flex: 0 0 29px !important;
+        margin: 0 !important;
+        background: var(--pec-green, var(--accent)) !important;
+        -webkit-mask-size: contain !important;
+        -webkit-mask-repeat: no-repeat !important;
+        -webkit-mask-position: center !important;
+        mask-size: contain !important;
+        mask-repeat: no-repeat !important;
+        mask-position: center !important;
+    }
+
+    section[data-testid="stSidebar"]:hover div[role="radiogroup"],
+    section[data-testid="stSidebar"]:focus-within div[role="radiogroup"] {
+        align-items: stretch !important;
+    }
+
+    section[data-testid="stSidebar"]:hover div[role="radiogroup"] label,
+    section[data-testid="stSidebar"]:focus-within div[role="radiogroup"] label {
+        width: 100% !important;
+        max-width: 100% !important;
+        height: auto !important;
+        min-height: 56px !important;
+        padding: .72rem .78rem !important;
+        margin: 0 !important;
+        justify-content: flex-start !important;
+        gap: .75rem !important;
+    }
+
+    section[data-testid="stSidebar"]:hover div[role="radiogroup"] label p,
+    section[data-testid="stSidebar"]:focus-within div[role="radiogroup"] label p,
+    section[data-testid="stSidebar"]:hover div[role="radiogroup"] label [data-testid="stMarkdownContainer"],
+    section[data-testid="stSidebar"]:focus-within div[role="radiogroup"] label [data-testid="stMarkdownContainer"] {
+        display: block !important;
+        opacity: 1 !important;
+        width: auto !important;
+        max-width: 210px !important;
+        font-size: 1rem !important;
+        line-height: 1.2 !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+    }
+
+    @media (max-width: 760px) {
+        section[data-testid="stSidebar"] {
+            min-width: 72px !important;
+            width: 72px !important;
+            max-width: 72px !important;
+        }
+        section[data-testid="stSidebar"]:hover,
+        section[data-testid="stSidebar"]:focus-within {
+            min-width: 278px !important;
+            width: 278px !important;
+            max-width: 278px !important;
+        }
+        section[data-testid="stSidebar"] div[role="radiogroup"] label {
+            width: 52px !important;
+            height: 52px !important;
+            min-width: 52px !important;
+            max-width: 52px !important;
+        }
+    }
+
 </style>
     """
     return template.replace("__ACCENT__", accent)
