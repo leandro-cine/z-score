@@ -544,7 +544,29 @@ def css(sexo: str):
     .fixed-id-header { position:sticky; top:3.15rem; z-index:998; padding:.75rem .9rem; border-radius:14px; border:1px solid var(--pec-line, var(--border)); background:var(--pec-panel, var(--card)); box-shadow:0 6px 18px rgba(15,23,42,.08); margin-bottom:.9rem; }
     .fixed-id-header b { color:var(--pec-green, var(--accent))!important; }
 
-    </style>
+    
+
+    /* ===== AJUSTE MENU LATERAL COMPACTO E ÍCONES VETORIAIS ===== */
+    section[data-testid="stSidebar"] { min-width:76px!important; width:76px!important; transition:width .18s ease, min-width .18s ease; }
+    section[data-testid="stSidebar"]:hover { min-width:292px!important; width:292px!important; }
+    section[data-testid="stSidebar"] [data-testid="stSidebarUserContent"] { padding:.75rem .55rem!important; }
+    .pec-side-brand small, section[data-testid="stSidebar"] .stCaption, section[data-testid="stSidebar"] hr, section[data-testid="stSidebar"] input { display:none!important; }
+    section[data-testid="stSidebar"]:hover .pec-side-brand small,
+    section[data-testid="stSidebar"]:hover .stCaption,
+    section[data-testid="stSidebar"]:hover input { display:block!important; }
+    section[data-testid="stSidebar"] div[role="radiogroup"] label { min-height:58px; display:flex!important; align-items:center!important; gap:.55rem; overflow:hidden; }
+    section[data-testid="stSidebar"] div[role="radiogroup"] label p { white-space:nowrap; }
+    section[data-testid="stSidebar"] div[role="radiogroup"] label:nth-child(1)::before,
+    section[data-testid="stSidebar"] div[role="radiogroup"] label:nth-child(2)::before,
+    section[data-testid="stSidebar"] div[role="radiogroup"] label:nth-child(3)::before,
+    section[data-testid="stSidebar"] div[role="radiogroup"] label:nth-child(4)::before { content:""; flex:0 0 26px; width:26px; height:26px; display:inline-block; background:var(--pec-green); mask-size:contain; mask-repeat:no-repeat; mask-position:center; -webkit-mask-size:contain; -webkit-mask-repeat:no-repeat; -webkit-mask-position:center; }
+    section[data-testid="stSidebar"] div[role="radiogroup"] label:nth-child(1)::before { mask-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="black" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15z"/></svg>'); -webkit-mask-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="black" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15z"/></svg>'); }
+    section[data-testid="stSidebar"] div[role="radiogroup"] label:nth-child(2)::before { mask-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="black" stroke-width="2"><path d="M9 3v6l-4 8a3 3 0 0 0 2.7 4h8.6A3 3 0 0 0 19 17l-4-8V3"/><path d="M8 3h8"/></svg>'); -webkit-mask-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="black" stroke-width="2"><path d="M9 3v6l-4 8a3 3 0 0 0 2.7 4h8.6A3 3 0 0 0 19 17l-4-8V3"/><path d="M8 3h8"/></svg>'); }
+    section[data-testid="stSidebar"] div[role="radiogroup"] label:nth-child(3)::before { mask-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="black" stroke-width="2"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12c.8.7 1 1.4 1 2h6c0-.6.2-1.3 1-2a7 7 0 0 0-4-12z"/></svg>'); -webkit-mask-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="black" stroke-width="2"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12c.8.7 1 1.4 1 2h6c0-.6.2-1.3 1-2a7 7 0 0 0-4-12z"/></svg>'); }
+    section[data-testid="stSidebar"] div[role="radiogroup"] label:nth-child(4)::before { mask-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="black" stroke-width="2"><path d="M9 12l2 2 4-4"/><path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg>'); -webkit-mask-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="black" stroke-width="2"><path d="M9 12l2 2 4-4"/><path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg>'); }
+    @media (max-width: 760px) { section[data-testid="stSidebar"] { min-width:64px!important; width:64px!important; } section[data-testid="stSidebar"]:hover { min-width:250px!important; width:250px!important; } }
+
+</style>
     """
     return template.replace("__ACCENT__", accent)
 
@@ -741,28 +763,144 @@ def _descricoes_normais_exame():
     }
 
 
+
+def _is_relevant_value(txt: str) -> bool:
+    t = str(txt or "").strip().lower()
+    if not t:
+        return False
+    normais = [
+        "normal", "sem alterações", "sem alteracoes", "ausente", "não", "nao", "não informado", "nao informado",
+        "sem alterações aparentes", "sem alteracoes aparentes", "não avaliado", "nao avaliado",
+        "presente e simétrico bilateralmente", "coradas", "isocóricas e fotorreagentes",
+        "sem deformidades", "centralizado", "sem edema relevante", "pérvio", "íntegra e translúcida",
+        "fechada", "0", "0.0", "[]", "{}", "none"
+    ]
+    if any(t == n or t.startswith(n + ".") for n in normais):
+        return False
+    if t.startswith("pele íntegra") or t.startswith("criança em bom estado") or t.startswith("tórax sem") or t.startswith("ritmo cardíaco regular"):
+        return False
+    if t.startswith("abdome plano") or t.startswith("genitália externa típica") or t.startswith("coluna sem") or t.startswith("criança alerta"):
+        return False
+    return True
+
+
+def _flatten_relevant(obj, prefix=""):
+    itens = []
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            itens.extend(_flatten_relevant(v, f"{prefix}{k}: "))
+    elif isinstance(obj, list):
+        for v in obj:
+            itens.extend(_flatten_relevant(v, prefix))
+    else:
+        txt = str(obj).strip()
+        if _is_relevant_value(txt):
+            itens.append(prefix + txt)
+    return itens
+
+
+def _snip(txt, n=130):
+    txt = " ".join(str(txt or "").split())
+    return txt if len(txt) <= n else txt[:n-1].rstrip() + "…"
+
+
+def _seg_label(titulo, key, normal=""):
+    resumo = st.session_state.get(key, normal) or normal
+    return f"{titulo} — {_snip(resumo, 150)}" if resumo else titulo
+
+
+def _lista_ou_texto(itens):
+    if not itens:
+        return ""
+    if isinstance(itens, str):
+        return itens
+    return ", ".join([str(x) for x in itens if str(x).strip()])
+
+
+def _resumo_por_achados(normal, achados=None, obs=None):
+    achados = [str(a) for a in (achados or []) if _is_relevant_value(a)]
+    obs = str(obs or "").strip()
+    if obs and obs != normal:
+        return obs
+    if achados:
+        return normal.rstrip(".") + f", com achados: {', '.join(achados)}."
+    return normal
+
+
+def _render_hipoteses_cid11():
+    st.subheader("🧾 Hipóteses diagnósticas e CID-11")
+    problemas = _problemas_sugeridos()
+    st.caption("A lista abaixo é uma síntese clínica editável. Use-a para registrar hipóteses e vincular CID-11 quando definido.")
+    if not problemas:
+        st.info("Nenhum problema alterado/relevante foi identificado automaticamente até o momento.")
+    for i, pbl in enumerate(problemas, start=1):
+        with st.expander(f"Hipótese {i} — {pbl.get('titulo','Problema clínico')}", expanded=(i == 1)):
+            st.markdown("**Achados que sustentam:**")
+            st.markdown(html_lista(pbl.get("achados", [])), unsafe_allow_html=True)
+            h1, h2 = st.columns([2, 1])
+            with h1:
+                hipotese = st.text_input("Hipótese/condição clínica", value=pbl.get("titulo", ""), key=f"hipotese_{i}")
+            with h2:
+                cid = st.text_input("CID-11", placeholder="Ex.: CA23.0", key=f"cid11_{i}")
+            st.text_area("Justificativa clínica", value="Associar queixa, HDA, exame físico e critérios diagnósticos quando aplicável.", height=80, key=f"hip_just_{i}")
+    if st.session_state.get("usar_ia_passagem") and st.button("✨ Sugerir hipóteses/CID-11 com IA", use_container_width=True):
+        if gerar_passagem_caso_ia:
+            contexto = {"problemas": problemas, "consulta": st.session_state.get("passagem_consulta", {}), "exame": st.session_state.get("passagem_exame", {})}
+            txt = gerar_passagem_caso_ia({"pedido": "Sugira hipóteses diagnósticas pediátricas e possíveis CID-11 sem inventar dados. Seja objetivo.", "contexto": contexto})
+            st.markdown(f"<div class='passagem-box'>{txt}</div>", unsafe_allow_html=True)
+        else:
+            st.info("IA não configurada.")
+
+
+def _prescricao_consolidada_texto():
+    linhas = []
+    sup = st.session_state.get("passagem_suplementacao", {})
+    amb = st.session_state.get("passagem_ambulatorio", {})
+    if sup.get("resumo"):
+        linhas.append("SUPLEMENTAÇÃO / PROFILAXIA")
+        for item in sup.get("resumo", []):
+            linhas.append(f"- {item}")
+    if amb.get("prescricao"):
+        linhas.append("\nPRESCRIÇÃO DO PROTOCOLO AMBULATORIAL")
+        linhas.append(str(amb.get("prescricao")))
+    meds = amb.get("medicamentos") or []
+    if meds:
+        linhas.append("\nMEDICAMENTOS ORIENTADOS/PRESCRITOS")
+        for m in meds:
+            if m.get("principio"):
+                linhas.append(f"- {m.get('principio')} {m.get('apresentacao','')} — via {m.get('via','')}. Posologia: {m.get('posologia','')}. Indicação: {m.get('indicacao','')}.")
+    if not linhas:
+        linhas.append("Sem prescrição medicamentosa automática definida até o momento. Preencher diagnóstico/protocolo e revisar necessidade conforme exame físico e julgamento clínico.")
+    return "\n".join(linhas)
+
 def _problemas_sugeridos():
     problemas = []
     cres = st.session_state.get("passagem_crescimento", {}).get("resumos", [])
     for r in cres:
-        if not any(ok in str(r).lower() for ok in ["adequado", "eutrofia", "normal"]):
-            problemas.append({"titulo": "Alteração ou atenção no crescimento", "achados": [r], "protocolo": "Crescimento/nutrição"})
+        low = str(r).lower()
+        if not any(ok in low for ok in ["adequado", "eutrofia", "normal"]):
+            problemas.append({"titulo": "Alteração no crescimento/antropometria", "achados": [r], "protocolo": "Crescimento/nutrição"})
     dev = st.session_state.get("passagem_desenvolvimento", {})
-    if dev.get("pendentes"):
-        problemas.append({"titulo": "Marco do desenvolvimento ausente/não verificado", "achados": dev.get("pendentes", [])[:8], "protocolo": "Desenvolvimento infantil"})
+    pend_dev = [x for x in dev.get("pendentes", []) if "ausente" in str(x).lower()]
+    if pend_dev:
+        problemas.append({"titulo": "Marco do desenvolvimento ausente", "achados": pend_dev[:8], "protocolo": "Desenvolvimento infantil"})
     vac = st.session_state.get("passagem_vacinas", {}).get("atrasadas", [])
     if vac:
-        problemas.append({"titulo": "Atraso vacinal", "achados": vac[:12], "protocolo": "Imunizações/PNI"})
+        problemas.append({"titulo": "Atraso vacinal", "achados": vac[:14], "protocolo": "Imunizações/PNI"})
     sup = st.session_state.get("passagem_suplementacao", {})
     for k, vals in sup.get("fatores_risco", {}).items():
+        vals = [v for v in vals if _is_relevant_value(v)]
         if vals:
             problemas.append({"titulo": f"Fatores de risco — {k.replace('_',' ')}", "achados": vals[:8], "protocolo": "Suplementação/triagem nutricional"})
+    achados_exame = _flatten_relevant(st.session_state.get("passagem_exame", {}))[:18]
+    if achados_exame:
+        problemas.append({"titulo": "Achados alterados no exame físico", "achados": achados_exame, "protocolo": "Vincular a protocolo ambulatorial se houver"})
+    achados_anamnese = _flatten_relevant(st.session_state.get("passagem_consulta", {}).get("interrogatorio", {}))[:12]
+    if achados_anamnese:
+        problemas.append({"titulo": "Sintomas/alterações referidas na anamnese", "achados": achados_anamnese, "protocolo": "Vincular a protocolo ambulatorial se houver"})
     amb = st.session_state.get("passagem_ambulatorio", {})
     if amb.get("protocolo"):
-        problemas.append({"titulo": amb.get("protocolo"), "achados": [amb.get("classificacao", "")], "protocolo": amb.get("protocolo")})
-    queixa = st.session_state.get("passagem_consulta", {}).get("queixa_hda", "")
-    if queixa:
-        problemas.insert(0, {"titulo": "Queixa principal/HDA", "achados": [queixa], "protocolo": "Vincular a protocolo ambulatorial se houver"})
+        problemas.insert(0, {"titulo": amb.get("protocolo"), "achados": [amb.get("classificacao", "")], "protocolo": amb.get("protocolo")})
     return problemas
 
 # =========================
@@ -829,7 +967,7 @@ with st.sidebar:
     st.caption("Menu principal")
     eixo_atual = st.radio(
         "Navegação",
-        ["📝 Anamnese", "🩺 Exame físico", "🧩 Diagnósticos", "📋 Plano terapêutico"],
+        ["Anamnese", "Exame físico", "Diagnósticos", "Plano terapêutico"],
         key="eixo_atual",
         label_visibility="collapsed",
     )
@@ -919,38 +1057,42 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-_EIXO = st.session_state.get("eixo_atual", "📝 Anamnese")
+_EIXO = st.session_state.get("eixo_atual", "Anamnese")
 
 _subtabs_por_eixo = {
-    "📝 Anamnese": ["Queixa principal, HDA e IS", "Antecedentes", "Hábitos de vida", "Condições socioeconômicas", "Vacinação"],
-    "🩺 Exame físico": ["Sinais vitais e antropometria", "Exame geral e segmentar", "Crescimento", "Desenvolvimento", "Mapas clínicos"],
-    "🧩 Diagnósticos": ["Lista de problemas", "Investigação", "Hipóteses e CID-11"],
-    "📋 Plano terapêutico": ["Orientações", "Prescrição médica", "Exames solicitados e indicações"],
+    "Anamnese": ["Queixa principal, HDA e IS", "Antecedentes", "Hábitos de vida", "Condições socioeconômicas", "Vacinação"],
+    "Exame físico": ["Sinais vitais e antropometria", "Exame geral e segmentar", "Crescimento", "Desenvolvimento", "Mapas clínicos"],
+    "Diagnósticos": ["Lista de problemas", "Investigação", "Hipóteses e CID-11"],
+    "Plano terapêutico": ["Orientações", "Vitaminas e suplementações", "Prescrição médica", "Exames solicitados e indicações"],
 }
-_subtabs = st.tabs(_subtabs_por_eixo.get(_EIXO, _subtabs_por_eixo["📝 Anamnese"]))
+_subtabs = st.tabs(_subtabs_por_eixo.get(_EIXO, _subtabs_por_eixo["Anamnese"]))
 
 # Contextos reais de cada bloco existente, agora remapeados ao eixo/subseção desejado.
 # Blocos não pertencentes ao eixo selecionado não são executados.
 tabs = [None] * 15
-if _EIXO == "📝 Anamnese":
+hipoteses_tab = None
+prescricao_tab = None
+if _EIXO == "Anamnese":
     tabs[0] = _subtabs[0]   # Queixa/HDA/IS/medicamentos em uso
     tabs[11] = _subtabs[1]  # Antecedentes
     tabs[12] = _subtabs[2]  # Hábitos de vida
     tabs[13] = _subtabs[3]  # Condições socioeconômicas
     tabs[4] = _subtabs[4]   # Vacinação
-elif _EIXO == "🩺 Exame físico":
+elif _EIXO == "Exame físico":
     tabs[14] = _subtabs[0]  # Sinais vitais e antropometria
     tabs[1] = _subtabs[1]   # Exame geral e segmentar
     tabs[2] = _subtabs[2]   # Crescimento
     tabs[3] = _subtabs[3]   # Desenvolvimento
     tabs[8] = _subtabs[4]   # Mapas clínicos
-elif _EIXO == "🧩 Diagnósticos":
+elif _EIXO == "Diagnósticos":
     tabs[9] = _subtabs[0]   # Lista de problemas / mapa conceitual
     tabs[6] = _subtabs[1]   # Investigação por protocolo ambulatorial
-elif _EIXO == "📋 Plano terapêutico":
+    hipoteses_tab = _subtabs[2]  # Hipóteses e CID-11
+elif _EIXO == "Plano terapêutico":
     tabs[7] = _subtabs[0]   # Orientações
-    tabs[5] = _subtabs[1]   # Suplementação/prescrição estruturada
-    tabs[10] = _subtabs[2]  # Plano geral + exames/seguimento
+    tabs[5] = _subtabs[1]   # Vitaminas e suplementações
+    prescricao_tab = _subtabs[2] # Prescrição médica consolidada
+    tabs[10] = _subtabs[3]  # Exames solicitados e indicações
 
 def _render_block(idx: int) -> bool:
     return tabs[idx] is not None
@@ -1186,13 +1328,15 @@ if _render_block(1):
         geral_obs = st.text_area("Descrição geral", value="Criança em bom estado geral, ativa e reativa, hidratada, corada, acianótica, anictérica e eupneica ao exame.", height=70)
     
         pele_dict = {}
-        with st.expander("Pele e fâneros", expanded=False):
+        with st.expander(_seg_label("Pele e fâneros", "resumo_pele_faneros", _descricoes_normais_exame()["pele_faneros"]), expanded=False):
             pele = selecionar_opcoes("Achados de pele/fâneros", EXAME_PELE_FANEROS, key="pele_faneros")
             pele_obs = st.text_area("Descrição — pele e fâneros", value="Pele íntegra, sem lesões elementares relevantes, sem petéquias/equimoses, fâneros sem alterações aparentes.", height=70)
-            pele_dict = {"achados": pele, "obs": pele_obs}
+            pele_resumo = _resumo_por_achados(_descricoes_normais_exame()["pele_faneros"], pele, pele_obs)
+            st.session_state["resumo_pele_faneros"] = pele_resumo
+            pele_dict = {"achados": pele, "obs": pele_obs, "resumo_prontuario": pele_resumo}
     
         pesco = {}
-        with st.expander("Cabeça e pescoço", expanded=False):
+        with st.expander(_seg_label("Cabeça e pescoço", "resumo_cabeca_pescoco", "Cabeça e pescoço sem alterações relevantes."), expanded=False):
             st.markdown("#### Fontanelas")
             f1, f2 = st.columns(2)
             with f1:
@@ -1307,25 +1451,37 @@ if _render_block(1):
                 oto["mt_esquerda"] = st.selectbox("Membrana timpânica esquerda", ["íntegra e translúcida", "hiperemiada", "opaca", "abaulada", "perfurada", "não visualizada"], key="oto_mte", format_func=titulo_opcao)
             oto["obs"] = st.text_area("Descrição — otoscopia", value="Pavilhões auriculares sem alterações; condutos auditivos pérvios; membranas timpânicas íntegras, translúcidas e sem abaulamento quando visualizadas.", height=60)
             pesco["Otoscopia"] = oto
+            partes_cp = []
+            for _sec in ["Fontanelas", "Crânio", "Linfonodos", "Oftalmoscopia/olhos", "Rinoscopia", "Oroscopia", "Otoscopia"]:
+                _v = pesco.get(_sec, {})
+                if isinstance(_v, dict):
+                    _obs = _v.get("obs") or _v.get("Descrição") or ""
+                    if _obs: partes_cp.append(str(_obs))
+                    elif _flatten_relevant(_v): partes_cp.append(_sec + ": " + "; ".join(_flatten_relevant(_v)[:3]))
+            cabeca_resumo = " ".join(partes_cp) if partes_cp else "Cabeça e pescoço sem alterações relevantes."
+            st.session_state["resumo_cabeca_pescoco"] = cabeca_resumo
     
         resp = {}; cardio = {}; abd = {}
-        with st.expander("Respiratório", expanded=False):
+        with st.expander(_seg_label("Respiratório", "resumo_respiratorio", _descricoes_normais_exame()["respiratorio"]), expanded=False):
             cols = st.columns(2)
             for i, (sec, ops) in enumerate(EXAME_RESPIRATORIO.items()):
                 with cols[i % 2]:
                     resp[sec] = selecionar_opcoes(sec, ops, key=f"resp_{sec}")
-            resp["descrição"] = st.text_area("Descrição respiratória", value="Tórax sem deformidades, expansibilidade preservada, som claro pulmonar e murmúrio vesicular presente bilateralmente, sem ruídos adventícios.", height=70)
-        with st.expander("Cardiovascular", expanded=False):
+            resp["descrição"] = st.text_area("Descrição respiratória", value="Tórax sem deformidades, expansibilidade preservada, som claro pulmonar e murmúrio vesicular presente bilateralmente, sem ruídos adventícios.", height=70, key="resp_descricao")
+            st.session_state["resumo_respiratorio"] = _resumo_por_achados(_descricoes_normais_exame()["respiratorio"], _flatten_relevant(resp), resp["descrição"])
+        with st.expander(_seg_label("Cardiovascular", "resumo_cardiovascular", _descricoes_normais_exame()["cardiovascular"]), expanded=False):
             for sec, ops in EXAME_CARDIO.items():
                 cardio[sec] = selecionar_opcoes(sec, ops, key=f"cardio_{sec}")
-            cardio["descrição"] = st.text_area("Descrição cardiovascular", value="Ritmo cardíaco regular em dois tempos, bulhas normofonéticas, sem sopros audíveis; pulsos periféricos palpáveis e perfusão adequada.", height=70)
-        with st.expander("Abdominal", expanded=False):
+            cardio["descrição"] = st.text_area("Descrição cardiovascular", value="Ritmo cardíaco regular em dois tempos, bulhas normofonéticas, sem sopros audíveis; pulsos periféricos palpáveis e perfusão adequada.", height=70, key="cardio_descricao")
+            st.session_state["resumo_cardiovascular"] = _resumo_por_achados(_descricoes_normais_exame()["cardiovascular"], _flatten_relevant(cardio), cardio["descrição"])
+        with st.expander(_seg_label("Abdominal", "resumo_abdominal", _descricoes_normais_exame()["abdominal"]), expanded=False):
             cols = st.columns(2)
             for i, (sec, ops) in enumerate(EXAME_ABDOMINAL.items()):
                 with cols[i % 2]:
                     abd[sec] = selecionar_opcoes(sec, ops, key=f"abd_{sec}")
-            abd["descrição"] = st.text_area("Descrição abdominal", value="Abdome plano ou globoso conforme biotipo, flácido, indolor à palpação, sem visceromegalias ou massas palpáveis; ruídos hidroaéreos presentes.", height=70)
-        with st.expander("Genitália", expanded=False):
+            abd["descrição"] = st.text_area("Descrição abdominal", value="Abdome plano ou globoso conforme biotipo, flácido, indolor à palpação, sem visceromegalias ou massas palpáveis; ruídos hidroaéreos presentes.", height=70, key="abd_descricao")
+            st.session_state["resumo_abdominal"] = _resumo_por_achados(_descricoes_normais_exame()["abdominal"], _flatten_relevant(abd), abd["descrição"])
+        with st.expander(_seg_label("Genitália", "resumo_genitalia", _descricoes_normais_exame()["genitalia"]), expanded=False):
             gc1, gc2, gc3 = st.columns(3)
             with gc1:
                 gen_tipo = st.selectbox("Caracterização", ["típica feminina", "típica masculina", "atípica/ambígua", "não avaliada"], key="gen_tipo", format_func=titulo_opcao)
@@ -1334,20 +1490,23 @@ if _render_block(1):
             with gc3:
                 tanner = st.selectbox("Tanner", ["G1/P1", "G2/P2", "G3/P3", "G4/P4", "G5/P5", "M1/P1", "M2/P2", "M3/P3", "M4/P4", "M5/P5", "não se aplica/não avaliado"], key="tanner")
             genitalia = selecionar_opcoes("Achados de genitália", EXAME_GENITALIA, key="genitalia")
-            genitalia_obs = st.text_area("Descrição — genitália", value="Genitália externa típica para sexo informado, sem lesões, secreções ou sinais inflamatórios aparentes; pilificação compatível com idade quando aplicável.", height=70)
-        with st.expander("Osteomuscular / extremidades", expanded=False):
+            genitalia_obs = st.text_area("Descrição — genitália", value="Genitália externa típica para sexo informado, sem lesões, secreções ou sinais inflamatórios aparentes; pilificação compatível com idade quando aplicável.", height=70, key="genitalia_descricao")
+            st.session_state["resumo_genitalia"] = _resumo_por_achados(_descricoes_normais_exame()["genitalia"], genitalia + [gen_tipo, gen_pelos, tanner], genitalia_obs)
+        with st.expander(_seg_label("Osteomuscular / extremidades", "resumo_osteomuscular", _descricoes_normais_exame()["osteomuscular"]), expanded=False):
             axial = selecionar_opcoes("Esqueleto axial / coluna", ["sem desvios aparentes", "cifose", "lordose acentuada", "escoliose suspeita", "dor à palpação", "limitação de mobilidade"], key="osteo_axial")
             apendicular = selecionar_opcoes("Esqueleto apendicular / membros", EXAME_OSTEOMUSCULAR, key="osteo_apendicular")
             osteo = {"axial": axial, "apendicular": apendicular}
-            osteo_obs = st.text_area("Descrição — osteomuscular", value="Coluna sem desvios aparentes; membros sem deformidades, assimetrias ou limitação de mobilidade; marcha compatível com a idade quando aplicável.", height=70)
-        with st.expander("Neurológico e reflexos", expanded=False):
+            osteo_obs = st.text_area("Descrição — osteomuscular", value="Coluna sem desvios aparentes; membros sem deformidades, assimetrias ou limitação de mobilidade; marcha compatível com a idade quando aplicável.", height=70, key="osteo_descricao")
+            st.session_state["resumo_osteomuscular"] = _resumo_por_achados(_descricoes_normais_exame()["osteomuscular"], _flatten_relevant(osteo), osteo_obs)
+        with st.expander(_seg_label("Neurológico e reflexos", "resumo_neurologico", _descricoes_normais_exame()["neurologico"]), expanded=False):
             sentidos = selecionar_opcoes("Sentidos / responsividade sensorial", ["visão aparentemente preservada", "audição aparentemente preservada", "responde a estímulos sonoros", "fixa e acompanha objetos", "alteração visual suspeita", "alteração auditiva suspeita"], key="neuro_sentidos")
             marcha = st.selectbox("Marcha", ["não se aplica pela idade", "adequada para idade", "alterada", "claudicante", "atáxica", "não avaliada"], key="neuro_marcha", format_func=titulo_opcao)
             neuro = selecionar_opcoes("Achados neurológicos", EXAME_NEUROLOGICO, key="neuro")
             reflexos = selecionar_opcoes("Reflexos primitivos — RN/lactente", REFLEXOS_PRIMITIVOS, key="reflexos", cols=1)
             marcos_auto = st.session_state.get("passagem_desenvolvimento", {}).get("marcos_presentes", [])
             st.caption("Marcos do desenvolvimento assinalados na aba Desenvolvimento serão incorporados automaticamente à passagem.")
-            neuro_obs = st.text_area("Descrição — neurológico/reflexos", value="Criança alerta e interativa, tônus e força globalmente preservados, sem assimetrias motoras evidentes; reflexos e marcha compatíveis com idade quando aplicável.", height=70)
+            neuro_obs = st.text_area("Descrição — neurológico/reflexos", value="Criança alerta e interativa, tônus e força globalmente preservados, sem assimetrias motoras evidentes; reflexos e marcha compatíveis com idade quando aplicável.", height=70, key="neuro_descricao")
+            st.session_state["resumo_neurologico"] = _resumo_por_achados(_descricoes_normais_exame()["neurologico"], _flatten_relevant({"sentidos": sentidos, "marcha": marcha, "achados": neuro, "reflexos": reflexos}), neuro_obs)
         st.markdown("### Exames complementares")
         n_exames = st.number_input("Número de exames complementares", 0, 12, 0, step=1)
         exames_comp = []
@@ -1518,8 +1677,8 @@ def _render_diagnosticos():
         st.markdown("<div class='soft-card'><div class='soft-title'>🧠 Desenvolvimento</div><p>" + str(dev.get("resumo", "Não avaliado.")) + "</p>" + html_lista(dev.get("presentes", [])[:8]) + "</div>", unsafe_allow_html=True)
 
     achados = []
-    achados += _flatten_for_text(st.session_state.get("passagem_consulta", {}).get("interrogatorio", {}))[:20]
-    achados += _flatten_for_text(st.session_state.get("passagem_exame", {}))[:20]
+    achados += _flatten_relevant(st.session_state.get("passagem_consulta", {}).get("interrogatorio", {}))[:20]
+    achados += _flatten_relevant(st.session_state.get("passagem_exame", {}))[:20]
     if achados:
         with st.expander("Achados relevantes resgatados da anamnese e exame físico", expanded=False):
             st.write("\n".join([f"- {a}" for a in achados[:35]]))
@@ -1544,7 +1703,7 @@ def _render_diagnosticos():
 
 def _render_plano_terapeutico(plano_base):
     st.markdown("<span id='eixo-plano'></span>", unsafe_allow_html=True)
-    st.subheader("📋 Plano terapêutico")
+    st.subheader("Plano terapêutico")
     st.caption("Plano construído a partir da lista de problemas, protocolos, vacinação, suplementação e orientações por idade.")
     cols = st.columns(2)
     with cols[0]:
@@ -1566,6 +1725,10 @@ def _render_plano_terapeutico(plano_base):
 if _render_block(9):
     with tabs[9]:
         _render_diagnosticos()
+
+if hipoteses_tab is not None:
+    with hipoteses_tab:
+        _render_hipoteses_cid11()
     
 # Plano sugestivo básico para passagem
 plano = []
@@ -1580,6 +1743,14 @@ if st.session_state.get("passagem_desenvolvimento", {}).get("pendentes"):
     plano.append("orientar estimulação e reavaliar marcos ausentes/não verificados")
 plano.append("programar retorno conforme achados clínicos, crescimento, desenvolvimento e demanda familiar")
 st.session_state["passagem_plano"] = plano
+
+if prescricao_tab is not None:
+    with prescricao_tab:
+        st.subheader("💊 Prescrição médica consolidada")
+        st.caption("Modelo único gerado a partir de suplementação, protocolos e medicamentos informados. Revise antes de entregar ao responsável.")
+        presc = _prescricao_consolidada_texto()
+        st.text_area("Modelo de prescrição", value=presc, height=280, key="prescricao_consolidada_editor")
+        st.markdown(f"<div class='prescricao'>{escape_html(st.session_state.get('prescricao_consolidada_editor', presc)).replace(chr(10), '<br>')}</div>", unsafe_allow_html=True)
 
 if _render_block(10):
     with tabs[10]:
