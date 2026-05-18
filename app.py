@@ -76,6 +76,18 @@ except Exception:
 
 st.set_page_config(page_title="Puericultura Digital", page_icon="👶", layout="wide", initial_sidebar_state="collapsed")
 
+# Mantém os dados preenchidos mesmo quando a seção/tela deixa de ser renderizada.
+# No Streamlit, widgets que somem da tela podem ter seus valores limpos automaticamente;
+# a autoatribuição abaixo "desacopla" esses valores do ciclo de limpeza dos widgets.
+def preservar_estado_entre_secoes():
+    for _k in list(st.session_state.keys()):
+        try:
+            st.session_state[_k] = st.session_state[_k]
+        except Exception:
+            pass
+
+preservar_estado_entre_secoes()
+
 # =========================
 # Utilitários
 # =========================
@@ -1009,8 +1021,6 @@ def montar_dados_passagem():
         "desenvolvimento": st.session_state.get("passagem_desenvolvimento", {}),
         "vacinas": st.session_state.get("passagem_vacinas", {}),
         "suplementacao": st.session_state.get("passagem_suplementacao", {}),
-        "ambulatorio": st.session_state.get("passagem_ambulatorio", {}),
-        "plano_sugerido": st.session_state.get("passagem_plano", []),
     }
 
 
@@ -1316,25 +1326,25 @@ prematuro = idade_gest_sem < 37
 # CSS precisa ser carregado antes de qualquer HTML customizado para não aparecer desconfigurado.
 st.markdown(css(sexo), unsafe_allow_html=True)
 
-st.markdown("<div class='hero'><h1>👶 Puericultura Digital</h1><p>Prontuário de puericultura estruturado por eixos: anamnese, exame físico, diagnósticos e plano terapêutico.</p></div>", unsafe_allow_html=True)
+st.markdown("<div class='hero'><h1>👶 Puericultura Digital</h1><p>Prontuário de puericultura simplificado: anamnese, exame físico e profilaxias.</p></div>", unsafe_allow_html=True)
 
 with st.sidebar:
     st.markdown("""
     <div class='pec-side-brand'>
       <div class='pec-side-logo'>SUS</div>
-      <div><b>Puericultura Digital</b><br><small>Prontuário orientado por eixos</small></div>
+      <div><b>Puericultura Digital</b><br><small>Anamnese · Exame físico · Profilaxias</small></div>
     </div>
     """, unsafe_allow_html=True)
     st.caption("Menu principal")
     eixo_atual = st.radio(
         "Navegação",
-        ["Anamnese", "Exame físico", "Diagnósticos", "Plano terapêutico"],
+        ["Anamnese", "Exame físico", "Profilaxias"],
         key="eixo_atual",
         label_visibility="collapsed",
     )
     st.divider()
     st.text_input("Nome da criança", key="nome_crianca", placeholder="Opcional")
-    st.caption("Preencha os dados na ordem do atendimento. A passagem de caso usa tudo o que estiver preenchido.")
+    st.caption("Preencha os dados na ordem do atendimento. As informações permanecem salvas ao trocar de seção.")
 
 idade_dias_cron = max(0, (data_aval - data_nasc).days)
 correcao_dias = max(0, int(round((40 - idade_gest_sem) * 7))) if prematuro else 0
@@ -1387,16 +1397,13 @@ st.markdown(f"""
 <span class='metric-pill'>Atual: {peso:.1f}kg · {estatura:.1f}cm · PC {pc:.1f}cm · IMC {imc:.1f}</span></div>
 """, unsafe_allow_html=True)
 
-c_ia1, c_ia2, c_ia3 = st.columns([1,1,2])
-with c_ia1:
-    st.session_state["usar_ia_passagem"] = st.toggle("Usar IA na passagem", value=False)
-with c_ia2:
-    if st.button("🧾 Gerar passagem de caso", use_container_width=True):
+c_resumo1, c_resumo2 = st.columns([1, 3])
+with c_resumo1:
+    if st.button("🧾 Gerar resumo do atendimento", use_container_width=True):
         st.session_state["abrir_passagem_flag"] = True
-with c_ia3:
-    if diagnostico_ia_configurada:
-        diag = diagnostico_ia_configurada()
-        st.caption(f"IA: {diag.get('provedor')} · Gemini: {diag.get('gemini_configurada')} · OpenAI: {diag.get('openai_configurada')}")
+with c_resumo2:
+    st.caption("Resumo baseado apenas nos dados preenchidos de anamnese, exame físico e profilaxias.")
+st.session_state["usar_ia_passagem"] = False
 
 if tabelas is None:
     st.stop()
@@ -1413,7 +1420,7 @@ st.markdown("""
   <div>
     <span class='pec-badge'>PEC SUS · Puericultura</span>
     <h2>Atendimento de puericultura</h2>
-    <p>Registro organizado por eixo clínico. As seções compartilham dados entre si para apoiar o raciocínio clínico estruturado.</p>
+    <p>Registro simplificado por eixo clínico. Os dados preenchidos permanecem disponíveis ao navegar entre as seções.</p>
   </div>
 </div>
 """, unsafe_allow_html=True)
@@ -1421,15 +1428,14 @@ st.markdown("""
 _EIXO = st.session_state.get("eixo_atual", "Anamnese")
 
 _subtabs_por_eixo = {
-    "Anamnese": ["Queixa principal, HDA e IS", "Antecedentes", "Hábitos de vida", "Condições socioeconômicas", "Vacinação"],
+    "Anamnese": ["Queixa principal, HDA e IS", "Antecedentes", "Hábitos de vida", "Condições socioeconômicas"],
     "Exame físico": ["Sinais vitais e antropometria", "Exame geral e segmentar", "Crescimento", "Desenvolvimento", "Mapas clínicos"],
-    "Diagnósticos": ["Lista de problemas", "Investigação", "Hipóteses e CID-11"],
-    "Plano terapêutico": ["Orientações", "Vitaminas e suplementações", "Prescrição médica", "Exames solicitados e indicações"],
+    "Profilaxias": ["Vacinação", "Vitaminas e suplementações", "Orientações preventivas"],
 }
 _subtabs = st.tabs(_subtabs_por_eixo.get(_EIXO, _subtabs_por_eixo["Anamnese"]))
 
-# Contextos reais de cada bloco existente, agora remapeados ao eixo/subseção desejado.
-# Blocos não pertencentes ao eixo selecionado não são executados.
+# Contextos reais de cada bloco existente, remapeados para uma versão simplificada.
+# Foram retiradas as partes de diagnóstico, investigação, CID, protocolos e prescrição terapêutica consolidada.
 tabs = [None] * 15
 hipoteses_tab = None
 prescricao_tab = None
@@ -1438,22 +1444,16 @@ if _EIXO == "Anamnese":
     tabs[11] = _subtabs[1]  # Antecedentes
     tabs[12] = _subtabs[2]  # Hábitos de vida
     tabs[13] = _subtabs[3]  # Condições socioeconômicas
-    tabs[4] = _subtabs[4]   # Vacinação
 elif _EIXO == "Exame físico":
     tabs[14] = _subtabs[0]  # Sinais vitais e antropometria
     tabs[1] = _subtabs[1]   # Exame geral e segmentar
     tabs[2] = _subtabs[2]   # Crescimento
     tabs[3] = _subtabs[3]   # Desenvolvimento
     tabs[8] = _subtabs[4]   # Mapas clínicos
-elif _EIXO == "Diagnósticos":
-    tabs[9] = _subtabs[0]   # Lista de problemas / mapa conceitual
-    tabs[6] = _subtabs[1]   # Investigação por protocolo ambulatorial
-    hipoteses_tab = _subtabs[2]  # Hipóteses e CID-11
-elif _EIXO == "Plano terapêutico":
-    tabs[7] = _subtabs[0]   # Orientações
+elif _EIXO == "Profilaxias":
+    tabs[4] = _subtabs[0]   # Vacinação
     tabs[5] = _subtabs[1]   # Vitaminas e suplementações
-    prescricao_tab = _subtabs[2] # Prescrição médica consolidada
-    tabs[10] = _subtabs[3]  # Exames solicitados e indicações
+    tabs[7] = _subtabs[2]   # Orientações preventivas
 
 def _render_block(idx: int) -> bool:
     return tabs[idx] is not None
@@ -1462,7 +1462,7 @@ if _render_block(0):
     with tabs[0]:
         st.markdown("<span id='eixo-anamnese'></span>", unsafe_allow_html=True)
         st.subheader("📝 Queixa principal, HDA e interrogatório sintomatológico")
-        st.caption("Registre a demanda principal do responsável e selecione achados por sistema. Os dados alimentam Diagnósticos e Plano.")
+        st.caption("Registre a demanda principal do responsável e selecione achados por sistema.")
 
         st.markdown("### Identificação do atendimento")
         id1, id2, id3 = st.columns(3)
@@ -2095,7 +2095,7 @@ if hipoteses_tab is not None:
 plano = []
 qc = st.session_state.get("passagem_consulta", {}).get("queixa_hda", "")
 if qc:
-    plano.append("conduzir queixa principal conforme hipótese clínica e protocolo selecionado")
+    plano.append("registrar e acompanhar queixa principal conforme avaliação clínica")
 if st.session_state.get("passagem_vacinas", {}).get("atrasadas"):
     plano.append("regularizar vacinas faltantes listadas, respeitando intervalos e idade máxima")
 if st.session_state.get("passagem_suplementacao"):
