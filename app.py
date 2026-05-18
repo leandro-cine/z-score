@@ -74,7 +74,7 @@ try:
 except Exception:
     selecionar_linfodos_por_imagem = selecionar_odontograma_por_imagem = None
 
-st.set_page_config(page_title="Puericultura Digital", page_icon="👶", layout="wide", initial_sidebar_state="collapsed")
+st.set_page_config(page_title="Puericultura Digital", page_icon="👶", layout="wide", initial_sidebar_state="expanded")
 
 # Mantém os dados preenchidos mesmo quando a seção/tela deixa de ser renderizada.
 # No Streamlit, widgets que somem da tela podem ter seus valores limpos automaticamente;
@@ -132,6 +132,97 @@ def html_lista(itens):
 
 def escape_html(s: str) -> str:
     return (s or "").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+
+
+def campo_preenchido(key: str) -> bool:
+    """Retorna True quando um campo do session_state parece ter sido preenchido pelo usuário."""
+    valor = st.session_state.get(key)
+    if valor is None:
+        return False
+    if isinstance(valor, str):
+        return bool(valor.strip())
+    if isinstance(valor, (list, tuple, set, dict)):
+        return bool(valor)
+    # Números/datas costumam ter valor padrão no app; contam como presentes.
+    return True
+
+
+def status_bloco(keys):
+    total = len(keys)
+    feitos = sum(1 for k in keys if campo_preenchido(k))
+    if total == 0:
+        return "—", "status-neutral", "Sem checklist"
+    if feitos == 0:
+        return "○", "status-empty", "A iniciar"
+    if feitos < total:
+        return "◐", "status-partial", f"{feitos}/{total}"
+    return "✓", "status-done", "Completo"
+
+
+def render_mapa_da_tela(eixo: str, subtabs: list[str]):
+    """Cabeçalho visual para o usuário não se perder entre as seções."""
+    guia = {
+        "Anamnese": {
+            "icone": "📝",
+            "corpo": "História clínica, antecedentes, hábitos e contexto familiar.",
+            "cards": {
+                "Queixa principal, HDA e IS": (["queixa_hda", "inter_obs"], "Demanda, evolução e sintomas por sistemas."),
+                "Antecedentes": (["gestas", "partos_normais", "partos_cesareos", "ant_pat", "ant_fam"], "Gestação, nascimento, patologias e família."),
+                "Hábitos de vida": (["alimentacao", "sono", "atividade", "fezes", "urina"], "Alimentação, eliminações, sono e rotina."),
+                "Condições socioeconômicas": (["tipo_casa", "moradores", "comodos", "socio"], "Moradia, saneamento, cuidadores e vulnerabilidades."),
+            },
+        },
+        "Exame físico": {
+            "icone": "🩺",
+            "corpo": "Medidas, exame segmentar, crescimento, desenvolvimento e mapas clínicos.",
+            "cards": {
+                "Sinais vitais e antropometria": (["peso", "estatura", "pc", "temp", "fc", "fr"], "Dados vitais e medidas atuais."),
+                "Exame geral e segmentar": (["geral_ectoscopia", "resp_descricao", "cardio_descricao", "abd_descricao", "pele_faneros"], "Achados gerais e por aparelho/sistema."),
+                "Crescimento": (["peso", "estatura", "pc"], "Curvas e classificação antropométrica."),
+                "Desenvolvimento": (["fatores_dev", "reflexos", "neuro_marcha", "neuro_sentidos"], "Marcos, reflexos e sinais de alerta."),
+                "Mapas clínicos": (["linfo_loc", "dentes_alt", "alt_dental"], "Linfonodos, odontograma e mapas visuais."),
+            },
+        },
+        "Profilaxias": {
+            "icone": "🛡️",
+            "corpo": "Vacinas, suplementações e orientações preventivas da puericultura.",
+            "cards": {
+                "Vacinação": (["passagem_vacinas"], "Situação vacinal, atrasos e próximas doses."),
+                "Vitaminas e suplementações": (["fat_crianca_anemia", "fat_vitd", "fat_b12", "ame_adequado_para_ferro"], "Ferro, vitamina D, vitamina A e fatores de risco."),
+                "Orientações preventivas": (["passagem_orientacoes", "telas", "desfralde", "animais"], "Segurança, alimentação, rotina e prevenção."),
+            },
+        },
+    }
+    dados = guia.get(eixo, guia["Anamnese"])
+    cards_html = []
+    for i, nome in enumerate(subtabs, start=1):
+        keys, desc = dados["cards"].get(nome, ([], ""))
+        simbolo, classe, texto_status = status_bloco(keys)
+        cards_html.append(f"""
+        <div class='screen-card {classe}'>
+          <div class='screen-card-top'><span>{i:02d}</span><b>{escape_html(nome)}</b></div>
+          <p>{escape_html(desc)}</p>
+          <em>{simbolo} {escape_html(texto_status)}</em>
+        </div>
+        """)
+    st.markdown(f"""
+    <div class='screen-map'>
+      <div class='screen-map-title'>
+        <div><span class='screen-icon'>{dados['icone']}</span><b>{escape_html(eixo)}</b></div>
+        <small>{escape_html(dados['corpo'])}</small>
+      </div>
+      <div class='screen-map-grid'>{''.join(cards_html)}</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+
+def render_trilha(eixo: str):
+    etapas = [("Anamnese", "📝"), ("Exame físico", "🩺"), ("Profilaxias", "🛡️")]
+    html = "".join([
+        f"<span class='trail-step {'active' if nome == eixo else ''}'>{ico} {escape_html(nome)}</span>"
+        for nome, ico in etapas
+    ])
+    st.markdown(f"<div class='trail'>{html}</div>", unsafe_allow_html=True)
 
 
 def titulo_opcao(valor):
@@ -939,6 +1030,64 @@ def css(sexo: str):
         }
     }
 
+
+
+    /* ===== MELHORIA DE ORIENTAÇÃO VISUAL E NAVEGAÇÃO ===== */
+    section[data-testid="stSidebar"] {
+        min-width: 292px !important;
+        width: 292px !important;
+        max-width: 292px !important;
+        overflow-x: visible !important;
+    }
+    section[data-testid="stSidebar"] [data-testid="stSidebarUserContent"] { padding: 1rem .85rem !important; }
+    section[data-testid="stSidebar"] .pec-side-brand { justify-content:flex-start !important; gap:.75rem !important; padding:.85rem .7rem !important; }
+    section[data-testid="stSidebar"] .pec-side-brand > div:not(.pec-side-logo),
+    section[data-testid="stSidebar"] .stCaption,
+    section[data-testid="stSidebar"] [data-testid="stCaptionContainer"],
+    section[data-testid="stSidebar"] [data-testid="stTextInput"],
+    section[data-testid="stSidebar"] hr { display:block !important; opacity:1 !important; width:auto !important; max-width:none !important; }
+    section[data-testid="stSidebar"] div[role="radiogroup"] label {
+        width: 100% !important;
+        max-width: 100% !important;
+        min-height: 60px !important;
+        justify-content:flex-start !important;
+        gap:.75rem !important;
+        padding:.78rem .8rem !important;
+        margin:.35rem 0 !important;
+        border-left: 5px solid transparent !important;
+    }
+    section[data-testid="stSidebar"] div[role="radiogroup"] label p,
+    section[data-testid="stSidebar"] div[role="radiogroup"] label span:not([data-testid]) {
+        display:block !important; opacity:1 !important; width:auto !important; max-width:220px !important; font-size:1rem !important;
+        white-space:normal !important; overflow:visible !important;
+    }
+    section[data-testid="stSidebar"] div[role="radiogroup"] label:has(input:checked) { border-left-color:var(--pec-green, var(--accent)) !important; }
+    .trail { display:flex; flex-wrap:wrap; gap:.45rem; margin:.25rem 0 .85rem; }
+    .trail-step { padding:.42rem .68rem; border-radius:999px; border:1px solid var(--pec-line, var(--border)); background:var(--pec-panel, var(--card)); color:var(--muted)!important; font-weight:850; font-size:.9rem; }
+    .trail-step.active { background:var(--pec-soft, var(--chip)); color:var(--pec-green, var(--accent))!important; border-color:var(--pec-green, var(--accent)); }
+    .screen-map { border:1px solid var(--pec-line, var(--border)); border-radius:18px; background:linear-gradient(135deg, var(--pec-panel, var(--card)), color-mix(in srgb, var(--pec-green, var(--accent)) 6%, var(--pec-panel, var(--card)))); box-shadow:0 6px 18px rgba(15,23,42,.06); padding:1rem; margin:.55rem 0 1rem; }
+    .screen-map-title { display:flex; align-items:flex-start; justify-content:space-between; gap:1rem; margin-bottom:.8rem; }
+    .screen-map-title b { font-size:1.25rem; color:var(--pec-green, var(--accent)); }
+    .screen-map-title small { color:var(--muted); max-width:620px; text-align:right; }
+    .screen-icon { display:inline-grid; place-items:center; width:38px; height:38px; border-radius:12px; background:var(--pec-soft, var(--chip)); margin-right:.45rem; }
+    .screen-map-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:.7rem; }
+    .screen-card { border:1px solid var(--pec-line, var(--border)); border-radius:16px; padding:.82rem; background:var(--pec-panel, var(--card)); border-left:6px solid var(--pec-line, var(--border)); min-height:126px; }
+    .screen-card.status-done { border-left-color:#16a34a; }
+    .screen-card.status-partial { border-left-color:#f59e0b; }
+    .screen-card.status-empty { border-left-color:#94a3b8; }
+    .screen-card-top { display:flex; gap:.5rem; align-items:flex-start; }
+    .screen-card-top span { font-weight:950; color:var(--pec-green, var(--accent)); font-size:.85rem; }
+    .screen-card-top b { color:var(--text); line-height:1.15; }
+    .screen-card p { color:var(--muted); font-size:.86rem; margin:.45rem 0 .55rem; line-height:1.25; }
+    .screen-card em { font-style:normal; font-weight:900; font-size:.82rem; color:var(--pec-green, var(--accent)); background:var(--pec-soft, var(--chip)); border-radius:999px; padding:.22rem .5rem; }
+    div[data-testid="stTabs"] [data-baseweb="tab-list"] { position:sticky; top:9.2rem; z-index:997; box-shadow:0 6px 16px rgba(15,23,42,.06); }
+    div[data-testid="stTabs"] button[role="tab"] { min-height:46px; }
+    @media (max-width: 860px) {
+        section[data-testid="stSidebar"] { min-width: 245px !important; width:245px!important; max-width:245px!important; }
+        .screen-map-title { display:block; }
+        .screen-map-title small { display:block; text-align:left; margin-top:.3rem; }
+        div[data-testid="stTabs"] [data-baseweb="tab-list"] { top:7.5rem; overflow-x:auto; }
+    }
 </style>
     """
     return template.replace("__ACCENT__", accent)
@@ -1341,6 +1490,7 @@ with st.sidebar:
         ["Anamnese", "Exame físico", "Profilaxias"],
         key="eixo_atual",
         label_visibility="collapsed",
+        format_func=lambda x: {"Anamnese": "📝  Anamnese", "Exame físico": "🩺  Exame físico", "Profilaxias": "🛡️  Profilaxias"}.get(x, x),
     )
     st.divider()
     st.text_input("Nome da criança", key="nome_crianca", placeholder="Opcional")
@@ -1415,24 +1565,27 @@ faixa, rx = faixa_x_por_idade(idade_meses_float)
 # Menu lateral principal + abas superiores por subseção.
 # As funções anteriores são preservadas e apenas remapeadas para os eixos.
 # =========================
-st.markdown("""
+_EIXO = st.session_state.get("eixo_atual", "Anamnese")
+
+st.markdown(f"""
 <div class='pec-workspace-title'>
   <div>
     <span class='pec-badge'>PEC SUS · Puericultura</span>
-    <h2>Atendimento de puericultura</h2>
-    <p>Registro simplificado por eixo clínico. Os dados preenchidos permanecem disponíveis ao navegar entre as seções.</p>
+    <h2>{escape_html(_EIXO)}</h2>
+    <p>Use o mapa abaixo para localizar rapidamente cada bloco. O menu lateral fica aberto e os dados não se perdem ao trocar de seção.</p>
   </div>
 </div>
 """, unsafe_allow_html=True)
-
-_EIXO = st.session_state.get("eixo_atual", "Anamnese")
+render_trilha(_EIXO)
 
 _subtabs_por_eixo = {
     "Anamnese": ["Queixa principal, HDA e IS", "Antecedentes", "Hábitos de vida", "Condições socioeconômicas"],
     "Exame físico": ["Sinais vitais e antropometria", "Exame geral e segmentar", "Crescimento", "Desenvolvimento", "Mapas clínicos"],
     "Profilaxias": ["Vacinação", "Vitaminas e suplementações", "Orientações preventivas"],
 }
-_subtabs = st.tabs(_subtabs_por_eixo.get(_EIXO, _subtabs_por_eixo["Anamnese"]))
+_nomes_subtabs = _subtabs_por_eixo.get(_EIXO, _subtabs_por_eixo["Anamnese"])
+render_mapa_da_tela(_EIXO, _nomes_subtabs)
+_subtabs = st.tabs(_nomes_subtabs)
 
 # Contextos reais de cada bloco existente, remapeados para uma versão simplificada.
 # Foram retiradas as partes de diagnóstico, investigação, CID, protocolos e prescrição terapêutica consolidada.
