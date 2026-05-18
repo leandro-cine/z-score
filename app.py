@@ -160,7 +160,7 @@ def status_bloco(keys):
 
 
 def render_mapa_da_tela(eixo: str, subtabs: list[str]):
-    """Cabeçalho visual para o usuário não se perder entre as seções."""
+    """Cabeçalho visual nativo do Streamlit para evitar HTML cru na tela."""
     guia = {
         "Anamnese": {
             "icone": "📝",
@@ -194,27 +194,18 @@ def render_mapa_da_tela(eixo: str, subtabs: list[str]):
         },
     }
     dados = guia.get(eixo, guia["Anamnese"])
-    cards_html = []
+    st.markdown(f"### {dados['icone']} {eixo}")
+    st.caption(dados["corpo"])
+
+    cols = st.columns(min(3, max(1, len(subtabs))))
     for i, nome in enumerate(subtabs, start=1):
         keys, desc = dados["cards"].get(nome, ([], ""))
-        simbolo, classe, texto_status = status_bloco(keys)
-        cards_html.append(f"""
-        <div class='screen-card {classe}'>
-          <div class='screen-card-top'><span>{i:02d}</span><b>{escape_html(nome)}</b></div>
-          <p>{escape_html(desc)}</p>
-          <em>{simbolo} {escape_html(texto_status)}</em>
-        </div>
-        """)
-    st.markdown(f"""
-    <div class='screen-map'>
-      <div class='screen-map-title'>
-        <div><span class='screen-icon'>{dados['icone']}</span><b>{escape_html(eixo)}</b></div>
-        <small>{escape_html(dados['corpo'])}</small>
-      </div>
-      <div class='screen-map-grid'>{''.join(cards_html)}</div>
-    </div>
-    """, unsafe_allow_html=True)
-
+        simbolo, _classe, texto_status = status_bloco(keys)
+        with cols[(i - 1) % len(cols)]:
+            with st.container(border=True):
+                st.markdown(f"**{i:02d} · {nome}**")
+                st.caption(desc)
+                st.markdown(f"`{simbolo} {texto_status}`")
 
 def render_trilha(eixo: str):
     etapas = [("Anamnese", "📝"), ("Exame físico", "🩺"), ("Profilaxias", "🛡️")]
@@ -1340,11 +1331,64 @@ def _lista_ou_texto(itens):
 def _resumo_por_achados(normal, achados=None, obs=None):
     achados = [str(a) for a in (achados or []) if _is_relevant_value(a)]
     obs = str(obs or "").strip()
+    if achados:
+        base = obs if obs else normal
+        achados_txt = ", ".join(achados)
+        if achados_txt.lower() not in base.lower():
+            return base.rstrip(".") + f". Achados selecionados: {achados_txt}."
+        return base
     if obs and obs != normal:
         return obs
-    if achados:
-        return normal.rstrip(".") + f", com achados: {', '.join(achados)}."
     return normal
+
+
+def _selecionados_salvos(opcoes, key, default=None, permitir_outros=True):
+    """Lê seleções diretamente do session_state para pré-visualizações atualizarem no rerun."""
+    default = default or []
+    atuais = [x for i, x in enumerate(opcoes) if st.session_state.get(f"{key}_{i}", x in default)]
+    if permitir_outros:
+        atuais += _extras_opcoes(key)
+    return atuais
+
+
+def atualizar_resumos_exame_segmentar():
+    """Atualiza os resumos antes de desenhar os expanders, evitando atraso visual nas descrições."""
+    normais = _descricoes_normais_exame()
+    st.session_state["resumo_pele_faneros"] = _resumo_por_achados(
+        normais["pele_faneros"],
+        _selecionados_salvos(EXAME_PELE_FANEROS, "pele_faneros"),
+        st.session_state.get("pele_faneros_descricao", normais["pele_faneros"]),
+    )
+    st.session_state["resumo_respiratorio"] = _resumo_por_achados(
+        normais["respiratorio"],
+        _flatten_relevant({sec: _selecionados_salvos(ops, f"resp_{sec}") for sec, ops in EXAME_RESPIRATORIO.items()}),
+        st.session_state.get("resp_descricao", normais["respiratorio"]),
+    )
+    st.session_state["resumo_cardiovascular"] = _resumo_por_achados(
+        normais["cardiovascular"],
+        _flatten_relevant({sec: _selecionados_salvos(ops, f"cardio_{sec}") for sec, ops in EXAME_CARDIO.items()}),
+        st.session_state.get("cardio_descricao", normais["cardiovascular"]),
+    )
+    st.session_state["resumo_abdominal"] = _resumo_por_achados(
+        normais["abdominal"],
+        _flatten_relevant({sec: _selecionados_salvos(ops, f"abd_{sec}") for sec, ops in EXAME_ABDOMINAL.items()}),
+        st.session_state.get("abd_descricao", normais["abdominal"]),
+    )
+    st.session_state["resumo_genitalia"] = _resumo_por_achados(
+        normais["genitalia"],
+        _selecionados_salvos(EXAME_GENITALIA, "genitalia") + [st.session_state.get("gen_tipo"), st.session_state.get("gen_pelos"), st.session_state.get("tanner")],
+        st.session_state.get("genitalia_descricao", normais["genitalia"]),
+    )
+    st.session_state["resumo_osteomuscular"] = _resumo_por_achados(
+        normais["osteomuscular"],
+        _selecionados_salvos(["sem desvios aparentes", "cifose", "lordose acentuada", "escoliose suspeita", "dor à palpação", "limitação de mobilidade"], "osteo_axial") + _selecionados_salvos(EXAME_OSTEOMUSCULAR, "osteo_apendicular"),
+        st.session_state.get("osteo_descricao", normais["osteomuscular"]),
+    )
+    st.session_state["resumo_neurologico"] = _resumo_por_achados(
+        normais["neurologico"],
+        _selecionados_salvos(["visão aparentemente preservada", "audição aparentemente preservada", "responde a estímulos sonoros", "fixa e acompanha objetos", "alteração visual suspeita", "alteração auditiva suspeita"], "neuro_sentidos") + _selecionados_salvos(EXAME_NEUROLOGICO, "neuro") + _selecionados_salvos(REFLEXOS_PRIMITIVOS, "reflexos"),
+        st.session_state.get("neuro_descricao", normais["neurologico"]),
+    )
 
 
 def _render_hipoteses_cid11():
@@ -1833,18 +1877,19 @@ if _render_block(1):
         st.markdown("<span id='eixo-exame-fisico'></span>", unsafe_allow_html=True)
         st.subheader("🧑‍⚕️ Exame geral e segmentar")
         st.caption("Clique no campo de cada segmento para selecionar achados. A descrição final do segmento permanece editável e pré-preenchida com o normal.")
+        atualizar_resumos_exame_segmentar()
         geral = selecionar_opcoes(
             "Geral / ectoscopia",
             ECTOSCOPIA,
             key="geral_ectoscopia",
             default=["bom estado geral", "ativo e reativo", "hidratado", "corado", "acianótico", "anicterico", "eupneico"],
         )
-        geral_obs = st.text_area("Descrição geral", value="Criança em bom estado geral, ativa e reativa, hidratada, corada, acianótica, anictérica e eupneica ao exame.", height=70)
+        geral_obs = st.text_area("Descrição geral", value=_descricoes_normais_exame()["geral"], height=70, key="geral_descricao")
     
         pele_dict = {}
         with st.expander(_seg_label("Pele e fâneros", "resumo_pele_faneros", _descricoes_normais_exame()["pele_faneros"]), expanded=False):
             pele = selecionar_opcoes("Achados de pele/fâneros", EXAME_PELE_FANEROS, key="pele_faneros")
-            pele_obs = st.text_area("Descrição — pele e fâneros", value="Pele íntegra, sem lesões elementares relevantes, sem petéquias/equimoses, fâneros sem alterações aparentes.", height=70)
+            pele_obs = st.text_area("Descrição — pele e fâneros", value=_descricoes_normais_exame()["pele_faneros"], height=70, key="pele_faneros_descricao")
             pele_resumo = _resumo_por_achados(_descricoes_normais_exame()["pele_faneros"], pele, pele_obs)
             st.session_state["resumo_pele_faneros"] = pele_resumo
             pele_dict = {"achados": pele, "obs": pele_obs, "resumo_prontuario": pele_resumo}
@@ -1863,12 +1908,12 @@ if _render_block(1):
                 st.warning("Fontanela anterior aberta após ~18 meses: correlacionar com crescimento craniano, exame físico e contexto clínico.")
             if "aberta" in font_post_status and idade_meses_cron > 3:
                 st.warning("Fontanela posterior aberta após ~2–3 meses: avaliar contexto clínico e desenvolvimento craniano.")
-            font_obs = st.text_area("Descrição — fontanelas", value="Fontanela anterior normotensa quando aberta; fontanela posterior fechada ou sem alterações para a idade.", height=60)
+            font_obs = st.text_area("Descrição — fontanelas", value="Fontanela anterior normotensa quando aberta; fontanela posterior fechada ou sem alterações para a idade.", height=60, key="fontanelas_descricao")
             pesco["Fontanelas"] = {"anterior": font_ant_status, "tamanho_anterior_cm": font_ant_tam, "posterior": font_post_status, "tamanho_posterior_cm": font_post_tam, "obs": font_obs}
     
             st.markdown("#### Crânio")
             cranio = selecionar_opcoes("Formato/achados cranianos", CABECA_PESCOCO.get("Crânio", []), key="cranio")
-            cranio_obs = st.text_area("Descrição — crânio", value="Crânio normocéfalo, sem deformidades aparentes relevantes.", height=60)
+            cranio_obs = st.text_area("Descrição — crânio", value="Crânio normocéfalo, sem deformidades aparentes relevantes.", height=60, key="cranio_descricao")
             pesco["Crânio"] = {"achados": cranio, "obs": cranio_obs}
     
             st.markdown("#### Linfonodos")
@@ -1894,7 +1939,7 @@ if _render_block(1):
             with lc3:
                 linfo_lado = st.selectbox("Lateralidade", ["não se aplica", "direita", "esquerda", "bilateral"], key="linfo_lado", format_func=titulo_opcao)
             linfo_carac = selecionar_opcoes("Características", ["amolecido", "endurecido", "móvel", "fixo", "único", "múltiplos", "coalescente", "doloroso", "indolor", "com sinais flogísticos", "sem sinais flogísticos"], key="linfo_carac", cols=3)
-            linfo_obs = st.text_area("Descrição — linfonodos", value="Sem linfonodomegalias palpáveis clinicamente relevantes.", height=60)
+            linfo_obs = st.text_area("Descrição — linfonodos", value="Sem linfonodomegalias palpáveis clinicamente relevantes.", height=60, key="linfonodos_descricao")
             pesco["Linfonodos"] = {"localizacoes": linfo_loc, "quantidade": linfo_qtd, "maior_tamanho_cm": linfo_tam, "lateralidade": linfo_lado, "caracteristicas": linfo_carac, "obs": linfo_obs}
     
             st.markdown("#### Oftalmoscopia / olhos")
@@ -1919,7 +1964,7 @@ if _render_block(1):
             with rc2:
                 rino["cornetos"] = st.selectbox("Cornetos/mucosa", ["sem edema relevante", "edemaciados", "pálidos", "hiperemiados"], key="rino_cornetos", format_func=titulo_opcao)
                 rino["muco"] = st.selectbox("Muco/secreção", ["ausente", "hialino", "purulento", "sanguinolento"], key="rino_muco", format_func=titulo_opcao)
-            rino["obs"] = st.text_area("Descrição — rinoscopia", value="Rinoscopia anterior sem alterações relevantes; sem secreção patológica evidente.", height=60)
+            rino["obs"] = st.text_area("Descrição — rinoscopia", value="Rinoscopia anterior sem alterações relevantes; sem secreção patológica evidente.", height=60, key="rinoscopia_descricao")
             pesco["Rinoscopia"] = rino
     
             st.markdown("#### Oroscopia")
@@ -1963,7 +2008,7 @@ if _render_block(1):
                 oto["pavilhao_esquerdo"] = st.selectbox("Pavilhão auricular esquerdo", ["sem alterações", "malformação", "dor à mobilização", "lesão"], key="oto_pe", format_func=titulo_opcao)
                 oto["meato_esquerdo"] = st.selectbox("Meato/canal esquerdo", ["pérvio", "cerume", "edema", "otorreia", "corpo estranho"], key="oto_me", format_func=titulo_opcao)
                 oto["mt_esquerda"] = st.selectbox("Membrana timpânica esquerda", ["íntegra e translúcida", "hiperemiada", "opaca", "abaulada", "perfurada", "não visualizada"], key="oto_mte", format_func=titulo_opcao)
-            oto["obs"] = st.text_area("Descrição — otoscopia", value="Pavilhões auriculares sem alterações; condutos auditivos pérvios; membranas timpânicas íntegras, translúcidas e sem abaulamento quando visualizadas.", height=60)
+            oto["obs"] = st.text_area("Descrição — otoscopia", value="Pavilhões auriculares sem alterações; condutos auditivos pérvios; membranas timpânicas íntegras, translúcidas e sem abaulamento quando visualizadas.", height=60, key="otoscopia_descricao")
             pesco["Otoscopia"] = oto
             partes_cp = []
             for _sec in ["Fontanelas", "Crânio", "Linfonodos", "Oftalmoscopia/olhos", "Rinoscopia", "Oroscopia", "Otoscopia"]:
